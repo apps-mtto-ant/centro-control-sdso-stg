@@ -7,6 +7,7 @@ const $ = s => document.querySelector(s);
 let snapshot = null;
 let source = 'none';
 let storedAt = null;
+let initialized = false;
 
 const clean = v => v == null || v === '' ? '—' : String(v);
 const norm = v => (v == null ? '' : String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -120,37 +121,126 @@ function render() {
 
 async function fromCache() {
   try {
-    const cached=await getDataset(KEY);
-    if(!cached?.value?.data) return false;
-    snapshot=cached.value.data; source='cache'; storedAt=cached.storedAt||cached.value.storedAt||null; render(); return true;
-  } catch(e) { console.warn('Caché Dashboard Compresores no disponible',e); return false; }
+    const cached = await getDataset(KEY);
+    if (!cached?.value?.data) return false;
+    if (source === 'network') return true;
+    snapshot = cached.value.data;
+    source = 'cache';
+    storedAt = cached.storedAt || cached.value.storedAt || null;
+    render();
+    return true;
+  } catch (error) {
+    console.warn('Caché Dashboard Compresores no disponible', error);
+    return false;
+  }
+}
+
+function isValidSnapshot(data) {
+  return Boolean(
+    data &&
+    data.resumen &&
+    Array.isArray(data.equipos) &&
+    data.porArea &&
+    data.porModelo &&
+    data.validacionSAP
+  );
 }
 
 async function fromNetwork() {
-  const response=await api.getDashboardCompresores();
-  if(!response?.ok||!response?.data) throw new Error(response?.error?.message||'Respuesta de backend incompleta');
-  snapshot=response.data; source='network'; storedAt=new Date().toISOString();
-  await putDataset(KEY,{data:response.data,serverTime:response.serverTime||null,apiVersion:response.apiVersion||null,storedAt});
-  markSuccessfulSync(response.serverTime ? new Date(response.serverTime) : new Date());
-  window.dispatchEvent(new CustomEvent('sdso:sync'));
+  const response = await api.getDashboardCompresores();
+  if (!response?.ok || !isValidSnapshot(response?.data)) {
+    throw new Error(response?.error?.message || 'Respuesta de backend incompleta');
+  }
+
+  const previousCount = Array.isArray(snapshot?.equipos) ? snapshot.equipos.length : 0;
+  if (response.data.equipos.length === 0 && previousCount > 0) {
+    throw new Error('El backend devolvió un snapshot vacío; se conserva la última caché válida.');
+  }
+
+  const now = new Date().toISOString();
+  snapshot = response.data;
+  source = 'network';
+  storedAt = now;
   render();
+
+  try {
+    const saved = await putDataset(KEY, {
+      data: response.data,
+      serverTime: response.serverTime || null,
+      apiVersion: response.apiVersion || null,
+      storedAt: now
+    });
+
+    if (saved) {
+      markSuccessfulSync(response.serverTime ? new Date(response.serverTime) : new Date());
+      window.dispatchEvent(new CustomEvent('sdso:sync'));
+    } else {
+      window.dispatchEvent(new CustomEvent('sdso:toast', {
+        detail: 'Datos en línea cargados, pero no estarán disponibles sin conexión.'
+      }));
+    }
+  } catch (error) {
+    console.warn('Datos cargados pero no fue posible guardarlos offline:', error);
+    window.dispatchEvent(new CustomEvent('sdso:toast', {
+      detail: 'Datos en línea cargados, pero no fue posible actualizar la caché offline.'
+    }));
+  }
+
+  return true;
 }
 
-async function load(force=false) {
-  const btn=$('#dashboardRefresh'); if(btn){btn.disabled=true;btn.textContent='Sincronizando…';}
-  const cached=await fromCache();
-  if(navigator.onLine&&api.configured){
-    try{await fromNetwork();if(force)window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'Dashboard Compresores actualizado'}));}
-    catch(e){console.warn(e);if(!cached){source='error';setSource();}window.dispatchEvent(new CustomEvent('sdso:toast',{detail:cached?'Sin backend. Mostrando caché local.':'No fue posible cargar Dashboard Compresores.'}));}
-  } else if(!cached){source='error';setSource();}
-  if(btn){btn.disabled=false;btn.textContent='Actualizar datos';}
+async function load(force = false) {
+  const btn = $('#dashboardRefresh');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sincronizando…';
+  }
+
+  const cachePromise = fromCache();
+  const networkPromise = navigator.onLine && api.configured
+    ? fromNetwork()
+    : null;
+
+  const cached = await cachePromise;
+
+  if (networkPromise) {
+    try {
+      await networkPromise;
+      if (force) {
+        window.dispatchEvent(new CustomEvent('sdso:toast', { detail: 'Dashboard Compresores actualizado' }));
+      }
+    } catch (error) {
+      console.warn(error);
+      if (!cached && source !== 'network') {
+        source = 'error';
+        setSource();
+      }
+      window.dispatchEvent(new CustomEvent('sdso:toast', {
+        detail: cached ? 'Sin backend. Mostrando caché local.' : 'No fue posible cargar Dashboard Compresores.'
+      }));
+    }
+  } else if (!cached) {
+    source = 'error';
+    setSource();
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Actualizar datos';
+  }
 }
 
 export function initDashboardCompresores() {
+  if (initialized) return;
+  initialized = true;
+
   ['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.addEventListener(id==='dashboardSearch'?'input':'change',renderTable);
   });
   $('#dashboardClearFilters')?.addEventListener('click',()=>{['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderTable();});
   $('#dashboardRefresh')?.addEventListener('click',()=>load(true));
-  void load(false);
+}
+
+export function loadDashboardCompresores(force = false) {
+  return load(force);
 }
