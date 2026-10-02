@@ -9,7 +9,7 @@ let source = 'none';
 let storedAt = null;
 
 const clean = v => v == null || v === '' ? '—' : String(v);
-const norm = v => clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const norm = v => (v == null ? '' : String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
 function stamp(v) {
   if (!v) return 'Sin actualización';
