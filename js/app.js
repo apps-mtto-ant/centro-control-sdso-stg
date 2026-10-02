@@ -1,6 +1,6 @@
 import { initOfflineLayer, getLastSyncLabel } from './offline.js';
 import { initLocalDb } from './db.js';
-import { initDashboardCompresores } from './dashboard-compresores.js';
+import { initDashboardCompresores, loadDashboardCompresores } from './dashboard-compresores.js';
 import { api } from './api.js';
 import { auth } from './auth.js';
 
@@ -11,6 +11,7 @@ const titles = Object.freeze({
   'centro-informe': 'Centro Informe',
   apps: 'Aplicaciones SDSO',
   dashboard: 'Dashboard',
+  'dashboard-compresores': 'Dashboard Compresores',
   powerbi: 'Power BI',
   informes: 'Informes / herramientas'
 });
@@ -94,6 +95,7 @@ function renderSection(section) {
     else link.removeAttribute('aria-current');
   });
   $('#pageTitle').textContent = titles[section];
+  if (section === 'dashboard-compresores') void loadDashboardCompresores();
   setDrawer(false, { restoreFocus: false });
   window.scrollTo(0, 0);
   $('#content').focus({ preventScroll: true });
@@ -230,6 +232,16 @@ function decorateIcons() {
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let reloaded = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
+
   try {
     await navigator.serviceWorker.register('./service-worker.js', { scope: './', updateViaCache: 'none' });
   } catch (error) {
@@ -250,7 +262,11 @@ function bindEvents() {
     updateConnectivity();
     showToast(navigator.onLine ? 'Conexión disponible' : 'No hay conexión disponible');
   });
-  window.addEventListener('online', () => { updateConnectivity(); showToast('Conexión restablecida'); });
+  window.addEventListener('online', () => {
+    updateConnectivity();
+    showToast('Conexión restablecida');
+    if (currentSectionFromHash() === 'dashboard-compresores') void loadDashboardCompresores();
+  });
   window.addEventListener('offline', () => { updateConnectivity(); showToast('Centro operando sin conexión'); });
   window.addEventListener('sdso:sync', updateConnectivity);
   window.addEventListener('sdso:toast', event => showToast(event.detail || 'Actualización completada'));
