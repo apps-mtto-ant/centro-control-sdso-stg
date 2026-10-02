@@ -154,16 +154,33 @@
         </section>
 
         <section class="view" data-view="dashboard">
-          <div class="section-heading"><div><p class="eyebrow">DASHBOARDS SDSO</p><h2>Dashboard</h2></div></div>
-          <div class="panel muted-panel">
-            <span class="badge">PRÓXIMA MIGRACIÓN</span>
-            <h3>Dashboard Compresores</h3>
-            <p>Será el primer dashboard nativo del nuevo Centro de Control. Su integración se realizará sobre Apps Script + Google Sheets, sin depender de Python ni localhost.</p>
+          <div class="section-heading dashboard-heading">
+            <div><p class="eyebrow">DASHBOARD NATIVO · v0.3</p><h2>Compresores</h2></div>
+            <div class="dashboard-actions"><span id="dashboardSource" class="data-source">Cargando…</span><button id="dashboardRefresh" class="primary-btn" type="button">Actualizar datos</button></div>
           </div>
-          <div class="empty-state resource-empty">
-            <strong>Siguientes dashboards</strong>
-            <p>Clima, Puentes Grúa, Portones, RCI, Caminos y el resto de dashboards SDSO se incorporarán progresivamente.</p>
+          <div class="kpi-grid">
+            <article class="kpi-card"><span>Total equipos</span><strong id="kpiTotal">0</strong></article>
+            <article class="kpi-card kpi-ok"><span>Disponibles</span><strong id="kpiDisponibles">0</strong></article>
+            <article class="kpi-card kpi-error"><span>Indisponibles</span><strong id="kpiIndisponibles">0</strong></article>
+            <article class="kpi-card kpi-pending"><span>Sin estado</span><strong id="kpiSinEstado">0</strong></article>
+            <article class="kpi-card"><span>Novedades</span><strong id="kpiNovedades">0</strong></article>
           </div>
+          <p id="dashboardLastUpdate" class="dashboard-update">Sin actualización operacional registrada</p>
+          <div class="dashboard-distributions">
+            <section class="panel distribution-panel"><p class="eyebrow">DISTRIBUCIÓN</p><h3>Por área</h3><div id="areaDistribution"></div></section>
+            <section class="panel distribution-panel"><p class="eyebrow">INVENTARIO</p><h3>Por modelo</h3><div id="modelDistribution"></div></section>
+            <section class="panel distribution-panel"><p class="eyebrow">CONCILIACIÓN</p><h3>Validación SAP</h3><div id="sapDistribution"></div></section>
+          </div>
+          <section class="panel equipment-panel">
+            <div class="equipment-toolbar"><div><p class="eyebrow">MAESTRO OPERACIONAL</p><h3>Equipos</h3><small id="equipmentResultCount">0 equipos</small></div><button id="dashboardClearFilters" class="icon-btn" type="button">Limpiar filtros</button></div>
+            <div class="dashboard-filters">
+              <label><span>Buscar</span><input id="dashboardSearch" type="search" placeholder="EQ, SAP, TAG, modelo, serie…"></label>
+              <label><span>Área</span><select id="dashboardAreaFilter"><option value="">Todas las áreas</option></select></label>
+              <label><span>Modelo</span><select id="dashboardModelFilter"><option value="">Todos los modelos</option></select></label>
+              <label><span>Validación SAP</span><select id="dashboardSapFilter"><option value="">Toda validación SAP</option></select></label>
+            </div>
+            <div class="table-scroll"><table class="equipment-table"><thead><tr><th>EQ</th><th>SAP</th><th>Área</th><th>Modelo</th><th>Denominación</th><th>Estado</th><th>Disponibilidad</th><th>Horómetro</th><th>Validación SAP</th><th>Novedades</th></tr></thead><tbody id="equipmentTableBody"></tbody></table></div>
+          </section>
         </section>
 
         <section class="view" data-view="powerbi">
