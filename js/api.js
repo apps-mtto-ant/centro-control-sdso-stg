@@ -10,6 +10,10 @@ export class ApiError extends Error {
   }
 }
 
+async function sleep(ms) {
+  return new Promise(resolve => window.setTimeout(resolve, ms));
+}
+
 async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -38,13 +42,26 @@ function endpoint(action, params = {}) {
 
 async function getJson(action, params = {}) {
   if (!config?.backendUrl) return { ok: false, configured: false };
-  const response = await fetchWithTimeout(endpoint(action, params), { cache: 'no-store' });
-  if (!response.ok) throw new ApiError('HTTP_ERROR', `Backend respondió HTTP ${response.status}.`, { status: response.status });
-  try {
-    return await response.json();
-  } catch (error) {
-    throw new ApiError('INVALID_JSON', 'El backend devolvió una respuesta JSON no válida.', { cause: String(error?.message || error) });
+
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(endpoint(action, params), { cache: 'no-store' });
+      if (!response.ok) throw new ApiError('HTTP_ERROR', `Backend respondió HTTP ${response.status}.`, { status: response.status });
+
+      try {
+        return await response.json();
+      } catch (error) {
+        throw new ApiError('INVALID_JSON', 'El backend devolvió una respuesta JSON no válida.', { cause: String(error?.message || error) });
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await sleep(1000);
+    }
   }
+
+  throw lastError || new ApiError('NETWORK_ERROR', 'No fue posible conectar con el backend.');
 }
 
 export const api = Object.freeze({
