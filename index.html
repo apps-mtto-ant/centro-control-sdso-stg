@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#00778B">
+  <meta name="description" content="Centro de Control SDSO - Minera Antucoya, Servicios de Soporte a la Operación">
+  <title>Centro de Control SDSO</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">ANT</div>
+        <div class="brand-copy">
+          <strong>Minera Antucoya</strong>
+          <span>Servicios de Soporte a la Operación</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Secciones">
+        <a class="nav-item is-active" data-section="inicio" href="#/inicio" aria-current="page">
+          <span class="nav-icon" aria-hidden="true"></span><span>Inicio</span>
+        </a>
+        <a class="nav-item" data-section="apps" href="#/apps">
+          <span class="nav-icon" aria-hidden="true"></span><span>Aplicaciones SDSO</span>
+        </a>
+        <a class="nav-item" data-section="dashboard" href="#/dashboard">
+          <span class="nav-icon" aria-hidden="true"></span><span>Dashboard</span>
+        </a>
+        <a class="nav-item" data-section="powerbi" href="#/powerbi">
+          <span class="nav-icon" aria-hidden="true"></span><span>Power BI</span>
+        </a>
+        <a class="nav-item" data-section="informes" href="#/informes">
+          <span class="nav-icon" aria-hidden="true"></span><span>Informes / herramientas</span>
+        </a>
+      </nav>
+
+    </aside>
+
+    <div class="drawer-overlay" id="drawerOverlay" hidden></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+        <div>
+          <p class="eyebrow">CENTRO DE CONTROL SDSO</p>
+          <h1 id="pageTitle">Inicio</h1>
+        </div>
+        <div class="topbar-status" aria-live="polite">
+          <div class="connection-badge" data-state="offline">
+            <span class="dot"></span><span class="connection-text">SIN CONEXIÓN</span>
+          </div>
+          <div class="sync-meta">Última sincronización: <span class="last-sync">Sin sincronizar</span></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="installButton" type="button" hidden>Instalar app</button>
+          <button class="icon-btn" id="refreshButton" type="button" title="Verificar conexión" aria-label="Verificar conexión">Verificar</button>
+        </div>
+      </header>
+
+      <section class="content" id="content" tabindex="-1">
+        <section class="view is-visible" data-view="inicio">
+          <div class="hero">
+            <div>
+              <p class="eyebrow" id="versionLabel">VERSIÓN</p>
+              <h2>Centro de Control SDSO</h2>
+              <p>Portal único para acceso a aplicaciones, dashboards, Power BI, informes y herramientas de Servicios de Soporte a la Operación.</p>
+            </div>
+            <div class="hero-status">
+              <span class="status-label">Estado del Centro</span>
+              <strong id="heroConnection">Sin conexión</strong>
+              <small id="heroSync">Sin sincronización registrada</small>
+            </div>
+          </div>
+
+          <div class="section-heading">
+            <div><p class="eyebrow">ACCESOS PRINCIPALES</p><h3>Módulos disponibles</h3></div>
+          </div>
+
+          <div class="card-grid">
+            <article class="module-card accent-teal">
+              <div class="module-icon" data-module-icon="compresores"></div>
+              <div><span class="module-kicker">OPERACIÓN</span><h4>Compresores</h4><p>Acceso a la App Compresores actual y base para el primer dashboard migrado.</p></div>
+              <a class="text-link" href="#/compresores">Abrir módulo →</a>
+            </article>
+            <article class="module-card accent-yellow">
+              <div class="module-icon" data-module-icon="informe"></div>
+              <div><span class="module-kicker">GESTIÓN DE TURNO</span><h4>Centro Informe</h4><p>Acceso externo al Centro Informe Fin de Turno existente.</p></div>
+              <a class="text-link" href="#/centro-informe">Abrir módulo →</a>
+            </article>
+            <article class="module-card accent-cyan">
+              <div class="module-icon" data-module-icon="apps"></div>
+              <div><span class="module-kicker">APLICACIONES</span><h4>Aplicaciones SDSO</h4><p>Punto de entrada para las aplicaciones operacionales vigentes.</p></div>
+              <a class="text-link" href="#/apps">Ver aplicaciones →</a>
+            </article>
+            <article class="module-card accent-teal">
+              <div class="module-icon" data-module-icon="dashboard"></div>
+              <div><span class="module-kicker">VISUALIZACIÓN</span><h4>Dashboard</h4><p>Acceso a los dashboards SDSO. Compresores será el primero en migrar a la nueva arquitectura web.</p></div>
+              <a class="text-link" href="#/dashboard">Ver dashboards →</a>
+            </article>
+            <article class="module-card accent-gray">
+              <div class="module-icon" data-module-icon="powerbi"></div>
+              <div><span class="module-kicker">ANALÍTICA</span><h4>Power BI</h4><p>Accesos a reportes corporativos externos.</p></div>
+              <a class="text-link" href="#/powerbi">Ver accesos →</a>
+            </article>
+            <article class="module-card accent-red">
+              <div class="module-icon" data-module-icon="tools"></div>
+              <div><span class="module-kicker">RECURSOS</span><h4>Informes y herramientas</h4><p>Acceso organizado a informes, utilidades y recursos complementarios.</p></div>
+              <a class="text-link" href="#/informes">Ver recursos →</a>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" data-view="compresores">
+          <div class="section-heading">
+            <div><p class="eyebrow">MÓDULO EXTERNO · ETAPA 1</p><h2>Compresores</h2></div>
+          </div>
+          <div class="panel external-panel">
+            <div>
+              <h3>App Compresores</h3>
+              <p>La aplicación actual se mantiene independiente durante esta etapa. El Centro de Control proporciona el acceso sin modificar su código ni backend.</p>
+            </div>
+            <a class="primary-btn" id="compressorsExternalLink" >Abrir App Compresores ↗</a>
+          </div>
+          <div class="panel muted-panel">
+            <span class="badge">PRÓXIMA ETAPA</span>
+            <h3>Dashboard Compresores</h3>
+            <p>Se incorporará como el primer dashboard nativo cuando se implemente la capa de datos con Apps Script + Google Sheets.</p>
+          </div>
+        </section>
+
+        <section class="view" data-view="centro-informe">
+          <div class="section-heading">
+            <div><p class="eyebrow">MÓDULO EXTERNO · ETAPA 1</p><h2>Centro Informe Fin de Turno</h2></div>
+          </div>
+          <div class="panel external-panel">
+            <div>
+              <h3>Centro Informe actual</h3>
+              <p>El Centro Informe existente continúa funcionando como aplicación externa en esta primera versión.</p>
+              <p class="helper-text" id="centroInformeHint">Configure la URL publicada en <code>js/config.js</code> para habilitar este acceso.</p>
+            </div>
+            <a class="primary-btn is-disabled" id="turnReportExternalLink" aria-disabled="true" tabindex="-1">URL pendiente</a>
+          </div>
+        </section>
+
+        <section class="view" data-view="apps">
+          <div class="section-heading"><div><p class="eyebrow">CATÁLOGO</p><h2>Aplicaciones SDSO</h2></div></div>
+          <div class="card-grid compact-grid" id="appsCatalog"></div>
+        </section>
+
+        <section class="view" data-view="dashboard">
+          <div class="section-heading"><div><p class="eyebrow">DASHBOARDS SDSO</p><h2>Dashboard</h2></div></div>
+          <div class="panel muted-panel">
+            <span class="badge">PRÓXIMA MIGRACIÓN</span>
+            <h3>Dashboard Compresores</h3>
+            <p>Será el primer dashboard nativo del nuevo Centro de Control. Su integración se realizará sobre Apps Script + Google Sheets, sin depender de Python ni localhost.</p>
+          </div>
+          <div class="empty-state resource-empty">
+            <strong>Siguientes dashboards</strong>
+            <p>Clima, Puentes Grúa, Portones, RCI, Caminos y el resto de dashboards SDSO se incorporarán progresivamente.</p>
+          </div>
+        </section>
+
+        <section class="view" data-view="powerbi">
+          <div class="section-heading"><div><p class="eyebrow">ENLACES EXTERNOS</p><h2>Power BI</h2></div></div>
+          <div class="card-grid compact-grid" id="powerbiCatalog"></div>
+        </section>
+
+        <section class="view" data-view="informes">
+          <div class="section-heading"><div><p class="eyebrow">RECURSOS</p><h2>Informes / herramientas</h2></div></div>
+          <div class="card-grid compact-grid" id="toolsCatalog"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="./js/config.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
