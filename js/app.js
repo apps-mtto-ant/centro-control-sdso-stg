@@ -96,6 +96,8 @@ function renderSection(section) {
     else link.removeAttribute('aria-current');
   });
   $('#pageTitle').textContent = titles[section];
+  const topbarStatus = $('.topbar-status');
+  if (topbarStatus) topbarStatus.hidden = section === 'inicio';
   if (section === 'dashboard-compresores') void loadDashboardCompresores();
   setDrawer(false, { restoreFocus: false });
   window.scrollTo(0, 0);
