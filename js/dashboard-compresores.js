@@ -146,15 +146,25 @@ function isValidSnapshot(data) {
   );
 }
 
-async function fromNetwork() {
+async function fromNetwork(cacheReady = Promise.resolve(false)) {
   const response = await api.getDashboardCompresores();
   if (!response?.ok || !isValidSnapshot(response?.data)) {
     throw new Error(response?.error?.message || 'Respuesta de backend incompleta');
   }
 
-  const previousCount = Array.isArray(snapshot?.equipos) ? snapshot.equipos.length : 0;
-  if (response.data.equipos.length === 0 && previousCount > 0) {
-    throw new Error('El backend devolvió un snapshot vacío; se conserva la última caché válida.');
+  if (response.data.equipos.length === 0) {
+    // Si la caché aún está cargando, esperamos solo para decidir si un snapshot
+    // vacío puede reemplazarla. Las respuestas normales de red no esperan IndexedDB.
+    try {
+      await cacheReady;
+    } catch {
+      // fromCache() ya normaliza sus errores; este catch evita bloquear la red.
+    }
+
+    const previousCount = Array.isArray(snapshot?.equipos) ? snapshot.equipos.length : 0;
+    if (previousCount > 0) {
+      throw new Error('El backend devolvió un snapshot vacío; se conserva la última caché válida.');
+    }
   }
 
   const now = new Date().toISOString();
@@ -198,7 +208,7 @@ async function load(force = false) {
 
   const cachePromise = fromCache();
   const networkPromise = navigator.onLine && api.configured
-    ? fromNetwork()
+    ? fromNetwork(cachePromise)
     : null;
 
   const cached = await cachePromise;
