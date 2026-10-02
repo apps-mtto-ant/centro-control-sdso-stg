@@ -1,5 +1,6 @@
 import { initOfflineLayer, getLastSyncLabel } from './offline.js';
 import { initLocalDb } from './db.js';
+import { initDashboardCompresores } from './dashboard-compresores.js';
 import { api } from './api.js';
 import { auth } from './auth.js';
 
@@ -251,6 +252,8 @@ function bindEvents() {
   });
   window.addEventListener('online', () => { updateConnectivity(); showToast('Conexión restablecida'); });
   window.addEventListener('offline', () => { updateConnectivity(); showToast('Centro operando sin conexión'); });
+  window.addEventListener('sdso:sync', updateConnectivity);
+  window.addEventListener('sdso:toast', event => showToast(event.detail || 'Actualización completada'));
 
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
@@ -274,6 +277,7 @@ async function boot() {
   renderCatalogs();
   bindEvents();
   initOfflineLayer();
+  initDashboardCompresores();
   updateConnectivity();
   renderSection(currentSectionFromHash());
 
@@ -283,7 +287,7 @@ async function boot() {
   // IndexedDB se inicializa en segundo plano y tiene timeout interno; nunca bloquea el arranque.
   void initLocalDb();
 
-  // Contratos preparados; v0.2 no fuerza backend ni autenticación.
+  // v0.3 integra backend real de Compresores; autorización permanece en modo LECTOR.
   void api;
   void auth;
 }
