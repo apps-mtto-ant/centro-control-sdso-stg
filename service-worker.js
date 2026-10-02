@@ -1,4 +1,4 @@
-/* v0.3.0-dev-r11 */
+/* v0.4.0-dev */
 importScripts('./js/config.js');
 
 const CONFIG = self.SDSO_CONFIG;

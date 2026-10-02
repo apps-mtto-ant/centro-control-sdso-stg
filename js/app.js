@@ -308,7 +308,7 @@ async function boot() {
   // IndexedDB se inicializa en segundo plano y tiene timeout interno; nunca bloquea el arranque.
   void initLocalDb();
 
-  // v0.3 integra backend real de Compresores; autorización permanece en modo LECTOR.
+  // v0.4 conserva lectura offline; las escrituras dependen de autorización en Apps Script.
   void api;
   void auth;
 }

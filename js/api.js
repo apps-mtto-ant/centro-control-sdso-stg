@@ -64,6 +64,21 @@ async function getJson(action, params = {}) {
   throw lastError || new ApiError('NETWORK_ERROR', 'No fue posible conectar con el backend.');
 }
 
+async function postJson(payload) {
+  if (!config?.backendUrl) return { ok: false, configured: false };
+  const response = await fetchWithTimeout(config.backendUrl, {
+    method: 'POST',
+    // text/plain avoids a browser preflight; Apps Script still parses JSON from postData.
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    redirect: 'follow'
+  });
+  if (!response.ok) throw new ApiError('HTTP_ERROR', `Backend respondió HTTP ${response.status}.`, { status: response.status });
+  try { return await response.json(); }
+  catch (error) { throw new ApiError('INVALID_JSON', 'El backend devolvió una respuesta JSON no válida.', { cause: String(error?.message || error) }); }
+}
+
 export const api = Object.freeze({
   get configured() {
     return Boolean(config?.backendUrl);
@@ -84,6 +99,30 @@ export const api = Object.freeze({
 
   getDashboardCompresores() {
     return getJson('getDashboardCompresores');
+  },
+
+  authenticate(idToken) {
+    return postJson({ action: 'authenticate', idToken });
+  },
+
+  getNovedades(idToken) {
+    return postJson({ action: 'getNovedades', idToken });
+  },
+
+  saveEstado(idToken, data) {
+    return postJson({ action: 'saveEstado', idToken, data });
+  },
+
+  saveHorometro(idToken, data) {
+    return postJson({ action: 'saveHorometro', idToken, data });
+  },
+
+  saveNovedad(idToken, data) {
+    return postJson({ action: 'saveNovedad', idToken, data });
+  },
+
+  closeNovedad(idToken, data) {
+    return postJson({ action: 'closeNovedad', idToken, data });
   },
 
   getDashboard(name = 'compresores') {
