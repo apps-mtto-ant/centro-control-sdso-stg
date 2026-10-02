@@ -89,7 +89,7 @@ function renderSection(section) {
   if (!titles[section]) section = 'inicio';
   $$('.view').forEach(view => view.classList.toggle('is-visible', view.dataset.view === section));
   const navSection = section === 'dashboard-compresores' ? 'dashboard' : section;
-  $('.nav-item').forEach(link => {
+  $$('.nav-item').forEach(link => {
     const active = link.dataset.section === navSection;
     link.classList.toggle('is-active', active);
     if (active) link.setAttribute('aria-current', 'page');
@@ -224,7 +224,7 @@ function decorateIcons() {
   const map = {
     inicio: 'inicio', apps: 'apps', dashboard: 'dashboard', powerbi: 'powerbi', informes: 'tools'
   };
-  $$('.nav-item').forEach(item => {
+  $$$('.nav-item').forEach(item => {
     const target = $('.nav-icon', item);
     target.innerHTML = svgIcon(map[item.dataset.section]);
   });
