@@ -13,7 +13,17 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
 <body>
-  <div class="app-shell" id="appShell">
+  <section class="auth-gate" id="authGate" aria-labelledby="authGateTitle">
+    <div class="auth-gate-card">
+      <div class="brand-mark auth-gate-mark" aria-hidden="true">ANT</div>
+      <p class="eyebrow">CENTRO DE CONTROL SDSO</p>
+      <h1 id="authGateTitle">Inicia sesión para continuar</h1>
+      <p>El contenido y las funciones del Centro de Control requieren una cuenta autorizada.</p>
+      <div id="googleSignInGate" class="auth-gate-button"></div>
+      <p id="authGateStatus" class="auth-gate-status" role="status" aria-live="polite">Cargando inicio de sesión…</p>
+    </div>
+  </section>
+  <div class="app-shell" id="appShell" hidden>
     <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">ANT</div>

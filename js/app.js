@@ -86,6 +86,9 @@ function setDrawer(open, { restoreFocus = true } = {}) {
 }
 
 function renderSection(section) {
+  if (!auth.signedIn) { $('#authGate').hidden = false; $('#appShell').hidden = true; return; }
+  $('#authGate').hidden = true;
+  $('#appShell').hidden = false;
   if (!titles[section]) section = 'inicio';
   $$('.view').forEach(view => view.classList.toggle('is-visible', view.dataset.view === section));
   const navSection = section === 'dashboard-compresores' ? 'dashboard' : section;
@@ -259,6 +262,13 @@ function bindEvents() {
   $('#drawerOverlay').addEventListener('click', () => setDrawer(false));
   document.addEventListener('keydown', event => { if (event.key === 'Escape') setDrawer(false); });
   window.addEventListener('hashchange', () => renderSection(currentSectionFromHash()));
+  window.addEventListener('sdso:auth', event => {
+    const authenticated = Boolean(event.detail?.authenticated && auth.signedIn);
+    $('#authGate').hidden = authenticated;
+    $('#appShell').hidden = !authenticated;
+    if (authenticated) renderSection(currentSectionFromHash());
+    else { $('#appShell').hidden = true; }
+  });
   window.addEventListener('resize', () => {
     if (!window.matchMedia('(max-width: 820px)').matches) setDrawer(false, { restoreFocus: false });
   });
@@ -270,7 +280,7 @@ function bindEvents() {
   window.addEventListener('online', () => {
     updateConnectivity();
     showToast('Conexión restablecida');
-    if (currentSectionFromHash() === 'dashboard-compresores') void loadDashboardCompresores();
+    if (auth.signedIn && currentSectionFromHash() === 'dashboard-compresores') void loadDashboardCompresores();
   });
   window.addEventListener('offline', () => { updateConnectivity(); showToast('Centro operando sin conexión'); });
   window.addEventListener('sdso:sync', updateConnectivity);

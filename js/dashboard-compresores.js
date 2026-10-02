@@ -252,4 +252,4 @@ async function closeNovelty(novedadId) {
   try{const result=await api.closeNovedad(auth.token,{novedadId,observacionCierre,requestId:crypto.randomUUID()});if(!result?.ok)throw new Error(result?.error?.message||'No fue posible cerrar la novedad.');await refreshNovedades();await load(true);}
   catch(error){window.dispatchEvent(new CustomEvent('sdso:toast',{detail:error.message}));}
 }
-export function loadDashboardCompresores(force=false){return load(force);}
+export function loadDashboardCompresores(force=false){return auth.signedIn?load(force):Promise.resolve(false);}

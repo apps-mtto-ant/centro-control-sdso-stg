@@ -278,3 +278,15 @@ code { background: #EDF3F4; padding: 2px 5px; border-radius: 5px; color: #365058
   .dashboard-tab-panel{display:none!important}.dashboard-tab-panel[data-panel="turno"]{display:block!important}
   .panel,.kpi-card{box-shadow:none!important;break-inside:avoid}.turn-report-heading{display:block}.equipment-table{min-width:0!important;font-size:10px!important}
 }
+
+
+/* Puerta de acceso obligatoria: hidden debe prevalecer sobre las reglas de componentes. */
+[hidden]{display:none!important}
+.app-shell[hidden]{display:none!important}
+.auth-gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--bg)}
+.auth-gate-card{width:min(100%,480px);padding:36px;border:1px solid var(--border);border-radius:18px;background:#fff;box-shadow:var(--shadow);text-align:center}
+.auth-gate-mark{margin:0 auto 20px}
+.auth-gate-card h1{margin:8px 0 12px;font-size:clamp(24px,5vw,32px)}
+.auth-gate-card>p:not(.eyebrow){color:var(--muted);line-height:1.55}
+.auth-gate-button{display:flex;justify-content:center;margin:24px 0 10px;min-height:42px}
+.auth-gate-status{min-height:1.5em;font-size:13px;color:var(--muted)}

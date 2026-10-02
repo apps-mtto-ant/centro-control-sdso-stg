@@ -7,12 +7,19 @@ let initialized = false;
 let listener = () => {};
 
 function publish() {
-  listener({ role, email, authenticated: Boolean(idToken) });
+  const state = { role, email, authenticated: Boolean(idToken) };
+  listener(state);
+  window.dispatchEvent(new CustomEvent('sdso:auth', { detail: state }));
+  const signedIn = Boolean(idToken);
+  const dashboardButton = document.getElementById('googleSignIn');
+  if (dashboardButton) dashboardButton.hidden = signedIn;
 }
 
 function setStatus(message) {
-  const el = document.getElementById('editorAuthStatus');
-  if (el) el.textContent = message;
+  ['editorAuthStatus', 'authGateStatus'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = message;
+  });
 }
 
 async function acceptCredential(response) {
@@ -48,12 +55,12 @@ export const auth = Object.freeze({
     listener = onChange;
     if (initialized) { publish(); return; }
     initialized = true;
-    const host = document.getElementById('googleSignIn');
+    const hosts = ['googleSignIn', 'googleSignInGate'].map(id => document.getElementById(id)).filter(Boolean);
     const config = globalThis.SDSO_CONFIG;
-    if (!host) return;
+    if (!hosts.length) return;
     if (!config?.googleClientId) {
-      host.hidden = true;
-      setStatus('Inicio de sesión disponible cuando staging configure Google Identity.');
+      hosts.forEach(host => { host.hidden = true; });
+      setStatus('Inicio de sesión no está configurado. Contacta al administrador.');
       publish();
       return;
     }
@@ -65,17 +72,20 @@ export const auth = Object.freeze({
         auto_select: false,
         cancel_on_tap_outside: true
       });
-      globalThis.google.accounts.id.renderButton(host, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: 260 });
+      hosts.forEach(host => {
+        host.hidden = Boolean(idToken);
+        globalThis.google.accounts.id.renderButton(host, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: 260 });
+      });
       setStatus('Inicia sesión con tu cuenta autorizada para registrar datos.');
     };
     if (globalThis.google?.accounts?.id) render();
     else {
-      host.hidden = true;
+      hosts.forEach(host => { host.hidden = true; });
       setStatus('Cargando inicio de sesión…');
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
-      script.onload = () => { host.hidden = false; render(); };
+      script.onload = () => { render(); hosts.forEach(host => { host.hidden = false; }); };
       script.onerror = () => setStatus('No se pudo cargar el inicio de sesión.');
       document.head.append(script);
     }
