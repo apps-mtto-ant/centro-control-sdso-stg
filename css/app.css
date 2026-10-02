@@ -203,3 +203,14 @@ code { background: #EDF3F4; padding: 2px 5px; border-radius: 5px; color: #365058
 @media(max-width:700px){.dashboard-heading{align-items:stretch;flex-direction:column}.dashboard-actions{justify-content:flex-start}.kpi-grid{grid-template-columns:1fr 1fr}.dashboard-distributions{grid-template-columns:1fr}.equipment-toolbar{align-items:flex-start;flex-direction:column}.dashboard-filters{grid-template-columns:1fr}}
 
 .dashboard-distributions{align-items:start}
+
+
+/* v0.3 — mejora de contraste tabla Compresores */
+.equipment-panel{background:#F7FAFB}
+.table-scroll{background:#EEF3F4}
+.equipment-table{background:#FFFFFF}
+.equipment-table th{background:#DDE9EC;color:#29464E;border-bottom:1px solid #C8D7DB}
+.equipment-table tbody tr{background:#FFFFFF}
+.equipment-table tbody tr:nth-child(even){background:#F2F7F8}
+.equipment-table td{border-top:1px solid #D8E3E6}
+.equipment-table tbody tr:hover{background:#E7F3F5}
