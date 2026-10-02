@@ -224,7 +224,7 @@ function decorateIcons() {
   const map = {
     inicio: 'inicio', apps: 'apps', dashboard: 'dashboard', powerbi: 'powerbi', informes: 'tools'
   };
-  $$$('.nav-item').forEach(item => {
+  $('.nav-item').forEach(item => {
     const target = $('.nav-icon', item);
     target.innerHTML = svgIcon(map[item.dataset.section]);
   });
