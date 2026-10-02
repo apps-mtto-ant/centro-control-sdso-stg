@@ -222,3 +222,6 @@ code { background: #EDF3F4; padding: 2px 5px; border-radius: 5px; color: #365058
 .dashboard-catalog-card .primary-btn{margin-top:auto;align-self:flex-start}
 .dashboard-catalog-card.is-coming{background:#F8FAFA}
 .dashboard-catalog-card.is-coming .badge{background:#EEF1F2;color:var(--muted)}
+
+/* v0.3 — respetar ocultación semántica del estado superior en Inicio */
+.topbar-status[hidden]{display:none!important}
