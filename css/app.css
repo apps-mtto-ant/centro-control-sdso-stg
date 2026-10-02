@@ -214,3 +214,11 @@ code { background: #EDF3F4; padding: 2px 5px; border-radius: 5px; color: #365058
 .equipment-table tbody tr:nth-child(even){background:#F2F7F8}
 .equipment-table td{border-top:1px solid #D8E3E6}
 .equipment-table tbody tr:hover{background:#E7F3F5}
+
+/* v0.3 — catálogo de dashboards */
+.dashboard-catalog-card{display:flex;flex-direction:column;gap:10px;min-height:220px}
+.dashboard-catalog-card h3{margin:4px 0 0}
+.dashboard-catalog-card p{margin:0 0 8px}
+.dashboard-catalog-card .primary-btn{margin-top:auto;align-self:flex-start}
+.dashboard-catalog-card.is-coming{background:#F8FAFA}
+.dashboard-catalog-card.is-coming .badge{background:#EEF1F2;color:var(--muted)}
