@@ -201,3 +201,5 @@ code { background: #EDF3F4; padding: 2px 5px; border-radius: 5px; color: #365058
 .table-empty{text-align:center;color:var(--muted);padding:28px!important}
 @media(max-width:1180px){.kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-distributions{grid-template-columns:1fr 1fr}.dashboard-filters{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.dashboard-heading{align-items:stretch;flex-direction:column}.dashboard-actions{justify-content:flex-start}.kpi-grid{grid-template-columns:1fr 1fr}.dashboard-distributions{grid-template-columns:1fr}.equipment-toolbar{align-items:flex-start;flex-direction:column}.dashboard-filters{grid-template-columns:1fr}}
+
+.dashboard-distributions{align-items:start}
