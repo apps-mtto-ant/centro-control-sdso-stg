@@ -15,6 +15,7 @@ const APP_SHELL = [
   './js/config.js',
   './js/app.js',
   './js/api.js',
+  './js/dashboard-compresores.js',
   './js/offline.js',
   './js/db.js',
   './js/auth.js',
