@@ -62,11 +62,16 @@ export const api = Object.freeze({
   },
 
   getEquipos() {
-    return getJson('equipos');
+    return getJson('getEquipos');
+  },
+
+  getDashboardCompresores() {
+    return getJson('getDashboardCompresores');
   },
 
   getDashboard(name = 'compresores') {
-    return getJson('dashboard', { name });
+    if (name === 'compresores') return getJson('getDashboardCompresores');
+    throw new ApiError('DASHBOARD_NOT_SUPPORTED', `Dashboard no soportado: ${name}`);
   },
 
   // En esta dev solo define el endpoint. La persistencia real y la marca de sincronización
