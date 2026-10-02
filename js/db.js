@@ -2,6 +2,7 @@ const CONFIG = globalThis.SDSO_CONFIG;
 const DB_NAME = CONFIG?.dbName || 'centro-control-sdso';
 const DB_VERSION = 1;
 const DEFAULT_OPEN_TIMEOUT_MS = 3000;
+const DEFAULT_IO_TIMEOUT_MS = 1500;
 const STORES = Object.freeze({
   datasets: 'datasets',
   meta: 'meta',
@@ -29,7 +30,11 @@ function openDatabase() {
     request.onblocked = () => reject(new Error('IndexedDB bloqueada por otra pestaña o versión abierta'));
     request.onsuccess = () => {
       const db = request.result;
-      db.onversionchange = () => db.close();
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      db.onclose = () => { dbPromise = null; };
       resolve(db);
     };
     request.onerror = () => reject(request.error || new Error('No fue posible abrir IndexedDB'));
@@ -76,20 +81,34 @@ export async function initLocalDb(timeoutMs = DEFAULT_OPEN_TIMEOUT_MS) {
   }
 }
 
-export async function putDataset(key, value) {
-  const db = await openDatabase();
-  if (!db) return false;
-  const tx = db.transaction(STORES.datasets, 'readwrite');
-  tx.objectStore(STORES.datasets).put({ value, storedAt: new Date().toISOString() }, key);
-  await transactionDone(tx);
-  return true;
+export async function putDataset(key, value, timeoutMs = DEFAULT_IO_TIMEOUT_MS) {
+  try {
+    const db = await withTimeout(openDatabase(), timeoutMs, 'Apertura IndexedDB');
+    if (!db) return false;
+    const tx = db.transaction(STORES.datasets, 'readwrite');
+    tx.objectStore(STORES.datasets).put({ value, storedAt: new Date().toISOString() }, key);
+    await withTimeout(transactionDone(tx), timeoutMs, 'Escritura IndexedDB');
+    return true;
+  } catch (error) {
+    dbPromise = null;
+    throw error;
+  }
 }
 
-export async function getDataset(key) {
-  const db = await openDatabase();
-  if (!db) return null;
-  const tx = db.transaction(STORES.datasets, 'readonly');
-  return (await requestToPromise(tx.objectStore(STORES.datasets).get(key))) || null;
+export async function getDataset(key, timeoutMs = DEFAULT_IO_TIMEOUT_MS) {
+  try {
+    const db = await withTimeout(openDatabase(), timeoutMs, 'Apertura IndexedDB');
+    if (!db) return null;
+    const tx = db.transaction(STORES.datasets, 'readonly');
+    return (await withTimeout(
+      requestToPromise(tx.objectStore(STORES.datasets).get(key)),
+      timeoutMs,
+      'Lectura IndexedDB'
+    )) || null;
+  } catch (error) {
+    dbPromise = null;
+    throw error;
+  }
 }
 
 export async function setMeta(key, value) {
