@@ -50,7 +50,7 @@ Estado validado al cierre de esta candidata:
 - 6 PENDIENTE SAP
 - 1 ERROR MAESTRO SAP
 
-Regla operacional v0.4: solo son válidos `OPERATIVO + DISPONIBLE` y `FUERA DE SERVICIO + INDISPONIBLE`. `NO APLICA` se retiró de estado y disponibilidad. Registros heredados con `NO APLICA` —o cualquier combinación fuera de esa matriz— se proyectan como **Sin estado** hasta registrar un estado real. `HISTORIAL_ESTADO` es inmutable: no se corrigen ni eliminan filas históricas.
+Regla operacional v0.4: el usuario selecciona únicamente el estado. La disponibilidad es derivada por backend y frontend: `OPERATIVO` y `STAND BY` → `DISPONIBLE`; `FUERA DE SERVICIO`, `OVERHAUL`, `MANTENCION` y `FALLA` → `NO DISPONIBLE`. `NO APLICA` no forma parte del modelo. Registros heredados con `INDISPONIBLE` se normalizan en lectura a `NO DISPONIBLE` cuando el estado es reconocido; estados desconocidos se proyectan como **Sin estado**. `HISTORIAL_ESTADO` es inmutable: no se corrigen ni eliminan filas históricas.
 
 ## IndexedDB
 
