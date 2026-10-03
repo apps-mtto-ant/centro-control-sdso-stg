@@ -152,7 +152,7 @@ function renderFilters() {
   const sets=[['#dashboardAreaFilter',items.map(x=>x.maestro?.areaOperacional),'Todas las áreas'],['#dashboardModelFilter',items.map(x=>x.maestro?.modelo),'Todos los modelos'],['#dashboardSapFilter',items.map(x=>x.maestro?.estadoValidacionSAP),'Toda validación SAP']];
   sets.forEach(([sel,values,placeholder])=>{const el=$(sel);if(!el)return;const current=el.value;el.replaceChildren(new Option(placeholder,''));[...new Set(values.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es')).forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===current))el.value=current;});
   $$('.equipment-select').forEach(el=>{const current=el.value;el.replaceChildren(new Option('Selecciona un equipo',''));items.slice().sort((a,b)=>String(a.maestro?.denominacion||a.equipoId).localeCompare(String(b.maestro?.denominacion||b.equipoId),'es')).forEach(x=>el.add(new Option(`${x.maestro?.denominacion||'Equipo'} · ${x.maestro?.modelo||'Sin modelo'} · ${x.equipoId}`,x.equipoId)));if([...el.options].some(o=>o.value===current))el.value=current;});
-  $('[data-list]').forEach(el=>{let list=snapshot?.listas?.[el.dataset.list]||[];if(el.dataset.list==='estadoOperacional')list=list.filter(v=>['operativo','fuera de servicio'].includes(nrm(v)));if(el.dataset.list==='disponibilidad')list=list.filter(v=>['disponible','indisponible'].includes(nrm(v)));const current=el.value;el.replaceChildren(new Option('Selecciona una opción',''));list.forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===current))el.value=current;});
+  document.querySelectorAll('[data-list]').forEach(el=>{let list=snapshot?.listas?.[el.dataset.list]||[];if(el.dataset.list==='estadoOperacional')list=list.filter(v=>['operativo','fuera de servicio'].includes(nrm(v)));if(el.dataset.list==='disponibilidad')list=list.filter(v=>['disponible','indisponible'].includes(nrm(v)));const current=el.value;el.replaceChildren(new Option('Selecciona una opción',''));list.forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===current))el.value=current;});
 }
 function matches(item) {
   const q=nrm($('#dashboardSearch')?.value||''),area=$('#dashboardAreaFilter')?.value||'',model=$('#dashboardModelFilter')?.value||'',sap=$('#dashboardSapFilter')?.value||'';
@@ -197,14 +197,14 @@ function renderNovedades() {
 }
 function syncEditorUi() {
   const isEditor=auth.can('editar');
-  $('[data-editor-only]').forEach(el=>{el.hidden=!isEditor;});
+  document.querySelectorAll('[data-editor-only]').forEach(el=>{el.hidden=!isEditor;});
   const signOut=$('#signOutButton');if(signOut)signOut.hidden=!auth.hasAccess;
 }
 function render() {
   syncEditorUi();
   if(!snapshot)return;
   renderKpis();renderAreas();renderCritical();renderFilters();renderTable();renderHorometers();renderSap();renderShift();setSource();
-  $('input[type="datetime-local"]',document).forEach(el=>{if(!el.value)el.value=localDateTime();});
+  document.querySelectorAll('input[type="datetime-local"]').forEach(el=>{if(!el.value)el.value=localDateTime();});
   renderNovedades();
 }
 function isValidSnapshot(data) {return Boolean(data&&data.resumen&&Array.isArray(data.equipos)&&data.porArea&&data.porModelo&&data.validacionSAP);}
