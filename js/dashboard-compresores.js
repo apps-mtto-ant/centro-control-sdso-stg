@@ -284,7 +284,7 @@ async function submitForm(form, method, success) {
     return;
   }
   delete form.dataset.requestFingerprint;delete form.dataset.requestId;delete form.dataset.uncertainFingerprint;
-  msg.textContent=success;form.reset();form.querySelectorAll('input[type="datetime-local"]').forEach(el=>el.value=localDateTime());
+  msg.textContent=result?.data?.superseded?'Esta actualización ya había sido reemplazada por una más reciente; mantuve el estado vigente.':success;form.reset();form.querySelectorAll('input[type="datetime-local"]').forEach(el=>el.value=localDateTime());
   try{await load(true);}catch(error){console.warn('El registro se guardó, pero no se pudo actualizar el panel.',error);}
   if(auth.signedIn){try{await refreshNovedades();}catch(error){console.warn('El registro se guardó, pero no se pudo actualizar novedades.',error);}}
   button.disabled=false;
