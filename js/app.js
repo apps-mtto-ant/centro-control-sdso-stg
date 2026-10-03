@@ -266,7 +266,7 @@ function bindEvents() {
     const authorized = Boolean(event.detail?.authorized && auth.hasAccess);
     $('#authGate').hidden = authorized;
     $('#appShell').hidden = !authorized;
-    $('#signOutButton').hidden = !authorized;
+    $('#signOutButton').hidden = !authorized || Boolean(event.detail?.offline);
     if (authorized) renderSection(currentSectionFromHash());
     else { $('#appShell').hidden = true; }
   });
@@ -276,13 +276,14 @@ function bindEvents() {
 
   $('#refreshButton').addEventListener('click', () => {
     updateConnectivity();
+    if(auth.offline&&navigator.onLine){auth.revalidateOnline();showToast('Conexión disponible. Verifica tu cuenta para volver al modo online.');return;}
     showToast(navigator.onLine ? 'Conexión disponible' : 'No hay conexión disponible');
   });
   $('#signOutButton').addEventListener('click', () => auth.signOut());
   window.addEventListener('online', () => {
     updateConnectivity();
+    if(auth.offline){showToast('Conexión restablecida. Mantienes los datos offline hasta verificar tu cuenta.');return;}
     showToast('Conexión restablecida');
-    if (auth.offline) { window.location.reload(); return; }
     if (auth.signedIn && currentSectionFromHash() === 'dashboard-compresores') void loadDashboardCompresores();
   });
   window.addEventListener('offline', () => { updateConnectivity(); showToast('Centro operando sin conexión'); });
