@@ -65,11 +65,13 @@ async function getJson(action, params = {}) {
 }
 
 const IDEMPOTENT_WRITE_ACTIONS = new Set(['saveEstado', 'saveHorometro', 'saveNovedad', 'closeNovedad']);
+const SAFE_READ_ACTIONS = new Set(['getEquipos', 'getDashboardCompresores', 'getNovedades', 'authenticate']);
 
 async function postJson(payload) {
   if (!config?.backendUrl) return { ok: false, configured: false };
   const retryableWrite = IDEMPOTENT_WRITE_ACTIONS.has(payload?.action);
-  const maxAttempts = retryableWrite ? 2 : 1;
+  const retryableRead = SAFE_READ_ACTIONS.has(payload?.action);
+  const maxAttempts = retryableWrite || retryableRead ? 2 : 1;
   let lastError = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -89,7 +91,7 @@ async function postJson(payload) {
       lastError = error;
       const uncertainTransport = ['TIMEOUT', 'NETWORK_ERROR', 'INVALID_JSON'].includes(error?.code)
         || error?.code === 'HTTP_ERROR' && Number(error?.details?.status) >= 500;
-      if (!retryableWrite || !uncertainTransport || attempt === maxAttempts) throw error;
+      if ((!retryableWrite && !retryableRead) || !uncertainTransport || attempt === maxAttempts) throw error;
       await sleep(500);
     }
   }
