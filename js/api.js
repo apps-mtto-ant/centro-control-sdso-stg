@@ -89,8 +89,9 @@ async function postJson(payload) {
       catch (error) { throw new ApiError('INVALID_JSON', 'El backend devolvió una respuesta JSON no válida.', { cause: String(error?.message || error) }); }
     } catch (error) {
       lastError = error;
+      const status = Number(error?.details?.status);
       const uncertainTransport = ['TIMEOUT', 'NETWORK_ERROR', 'INVALID_JSON'].includes(error?.code)
-        || error?.code === 'HTTP_ERROR' && Number(error?.details?.status) >= 500;
+        || error?.code === 'HTTP_ERROR' && (status >= 500 || retryableRead && status === 404);
       if ((!retryableWrite && !retryableRead) || !uncertainTransport || attempt === maxAttempts) throw error;
       await sleep(500);
     }
