@@ -266,7 +266,7 @@ function bindEvents() {
     const authorized = Boolean(event.detail?.authorized && auth.hasAccess);
     $('#authGate').hidden = authorized;
     $('#appShell').hidden = !authorized;
-    $('#signOutButton').hidden = !authorized || Boolean(event.detail?.offline);
+    $('#signOutButton').hidden = !authorized || Boolean(event.detail?.offline) || !navigator.onLine;
     if (authorized) renderSection(currentSectionFromHash());
     else { $('#appShell').hidden = true; }
   });
@@ -282,11 +282,17 @@ function bindEvents() {
   $('#signOutButton').addEventListener('click', () => auth.signOut());
   window.addEventListener('online', () => {
     updateConnectivity();
+    $('#signOutButton').hidden = !auth.hasAccess;
     if(auth.offline){showToast('Conexión restablecida. Mantienes los datos offline hasta verificar tu cuenta.');return;}
     showToast('Conexión restablecida');
     if (auth.signedIn && currentSectionFromHash() === 'dashboard-compresores') void loadDashboardCompresores();
   });
-  window.addEventListener('offline', () => { updateConnectivity(); showToast('Centro operando sin conexión'); });
+  window.addEventListener('offline', () => {
+    updateConnectivity();
+    $('#signOutButton').hidden = true;
+    window.dispatchEvent(new CustomEvent('sdso:connectivity'));
+    showToast('Centro operando sin conexión · solo lectura');
+  });
   window.addEventListener('sdso:sync', updateConnectivity);
   window.addEventListener('sdso:toast', event => showToast(event.detail || 'Actualización completada'));
 
