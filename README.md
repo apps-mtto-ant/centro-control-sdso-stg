@@ -50,7 +50,7 @@ Estado validado al cierre de esta candidata:
 - 6 PENDIENTE SAP
 - 1 ERROR MAESTRO SAP
 
-Regla operacional v0.4: el usuario selecciona únicamente el estado. La disponibilidad es derivada por backend y frontend: `OPERATIVO` y `STAND BY` → `DISPONIBLE`; `FUERA DE SERVICIO`, `OVERHAUL`, `MANTENCION` y `FALLA` → `NO DISPONIBLE`. `NO APLICA` no forma parte del modelo. Registros heredados con `INDISPONIBLE` se normalizan en lectura a `NO DISPONIBLE` cuando el estado es reconocido; estados desconocidos se proyectan como **Sin estado**. `HISTORIAL_ESTADO` es inmutable: no se corrigen ni eliminan filas históricas.
+Regla operacional v0.4: el usuario selecciona únicamente el estado. La disponibilidad es derivada por backend y frontend: `OPERATIVO` y `STAND BY` → `DISPONIBLE`; `FUERA DE SERVICIO`, `OVERHAUL`, `MANTENCION` y `FALLA` → `NO DISPONIBLE`. Para datos heredados, un estado reconocido es la fuente de verdad aunque la disponibilidad almacenada sea contradictoria: la lectura proyecta la disponibilidad canónica derivada sin modificar la fila original. `NO APLICA` no forma parte del modelo; solo estados heredados no reconocidos se proyectan como **Sin estado**. `HISTORIAL_ESTADO` es inmutable: no se corrigen ni eliminan filas históricas.
 
 ## IndexedDB
 
@@ -104,7 +104,7 @@ https://apps-mtto-ant.github.io/centro-control-sdso-stg/
 3. Pruebas online, offline, actualización PWA y backend.
 4. Correcciones de auditoría.
 5. Revisión final.
-6. Revisión pre-release de configuración para separar staging de producción.
+6. Ejecutar `node scripts/pre-release-check.js` después de sustituir toda configuración de staging; el chequeo debe quedar en verde antes del merge.
 7. Merge controlado de `develop-v0.4 → main` solo después de aprobación.
 8. Validación productiva y tag/release correspondiente.
 
