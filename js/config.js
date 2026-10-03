@@ -4,9 +4,9 @@
   const freezeList = items => Object.freeze(items.map(item => Object.freeze(item)));
 
   root.SDSO_CONFIG = Object.freeze({
-    version: '0.4.0-stg-auth10',
+    version: '0.4.0-stg-auth11',
     environment: 'staging',
-    cachePrefix: 'centro-control-sdso-stg-',
+    cachePrefix: 'stg-centro-control-sdso-',
     dbName: 'centro-control-sdso-stg',
     lastSyncKey: 'sdso:stg:lastSync',
     // Se configura con el endpoint de Apps Script del libro de staging.

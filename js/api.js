@@ -91,7 +91,7 @@ async function postJson(payload) {
       lastError = error;
       const status = Number(error?.details?.status);
       const uncertainTransport = ['TIMEOUT', 'NETWORK_ERROR', 'INVALID_JSON'].includes(error?.code)
-        || error?.code === 'HTTP_ERROR' && (status >= 500 || retryableRead && status === 404);
+        || error?.code === 'HTTP_ERROR' && (status >= 500 || status === 404 && (retryableRead || retryableWrite));
       if ((!retryableWrite && !retryableRead) || !uncertainTransport || attempt === maxAttempts) throw error;
       await sleep(500);
     }

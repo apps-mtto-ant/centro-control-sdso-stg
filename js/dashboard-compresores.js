@@ -260,7 +260,7 @@ async function submitForm(form, method, success) {
   try {
     result=await method(auth.token,data);
   } catch(error) {
-    if(['TIMEOUT','NETWORK_ERROR','INVALID_JSON'].includes(error?.code)||error?.code==='HTTP_ERROR'&&Number(error?.details?.status)>=500){
+    if(['TIMEOUT','NETWORK_ERROR','INVALID_JSON'].includes(error?.code)||error?.code==='HTTP_ERROR'&&(Number(error?.details?.status)>=500||Number(error?.details?.status)===404)){
       form.dataset.uncertainFingerprint=fingerprint;
       msg.textContent='No se pudo confirmar la respuesta del backend. El registro pudo haberse guardado. No cambies los datos; vuelve a intentar con este mismo formulario para verificarlo sin duplicar.';
     } else {
@@ -299,7 +299,7 @@ export function initDashboardCompresores() {
   $('#refreshNovedades')?.addEventListener('click',()=>void refreshNovedades().catch(e=>window.dispatchEvent(new CustomEvent('sdso:toast',{detail:e.message}))));
   $('#noveltyList')?.addEventListener('click',event=>{const id=event.target.closest('[data-close-novelty]')?.dataset.closeNovelty;if(!id)return;if(!auth.can('editar'))return;void closeNovelty(id);});
   bindForm('statusForm',api.saveEstado,'Estado actualizado.');bindForm('horometerForm',api.saveHorometro,'Lectura de horómetro registrada.');bindForm('noveltyForm',api.saveNovedad,'Novedad registrada.');
-  auth.init(state=>{if(state?.authorized)void loadCaptureLibrary();if(!state?.authorized){snapshot=null;novedades=null;source='none';storedAt=null;activeUserKey='';['equipmentTableBody','horometerTableBody','turnAreaBody','criticalList','areaSummary','areaBoard','areaStatusChart','availabilityChart','fleetChart','availabilityMiniChart','noveltyMiniChart','criticalStatusChart','sapReconciliationRows','turnAreaChart','noveltyList','turnNoveltySummary'].forEach(id=>document.getElementById(id)?.replaceChildren());['kpiTotal','kpiDisponibles','kpiIndisponibles','kpiSinEstado','kpiNovedades','availabilityRate','availabilityBase','availabilityMissing','criticalTotal','criticalAvailable','criticalUnavailable','criticalUnknown','sapConfirmed','sapPending','sapError','sapInactive','turnTotal','turnAvailable','turnUnavailable','turnUnknown','dashboardLastUpdate','turnReportDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});['statusForm','horometerForm','noveltyForm'].forEach(id=>{const form=document.getElementById(id);form?.reset();const message=form?.querySelector('.form-message');if(message)message.textContent='';});setSource();return;}if(activeUserKey&&auth.userKey&&activeUserKey!==auth.userKey){snapshot=null;novedades=null;source='none';storedAt=null;}if(snapshot)render();if(auth.signedIn&&!auth.offline)void refreshNovedades().catch(e=>console.warn(e));else{novedades=null;renderNovedades();}});
+  auth.init(state=>{if(state?.authorized)void loadCaptureLibrary();if(!state?.authorized){snapshot=null;novedades=null;source='none';storedAt=null;activeUserKey='';['equipmentTableBody','horometerTableBody','turnAreaBody','criticalList','areaSummary','areaBoard','areaStatusChart','availabilityChart','fleetChart','availabilityMiniChart','noveltyMiniChart','criticalStatusChart','sapReconciliationRows','turnAreaChart','noveltyList','turnNoveltySummary'].forEach(id=>document.getElementById(id)?.replaceChildren());['kpiTotal','kpiDisponibles','kpiIndisponibles','kpiSinEstado','kpiNovedades','availabilityRate','availabilityBase','availabilityMissing','criticalTotal','criticalAvailable','criticalUnavailable','criticalUnknown','sapConfirmed','sapPending','sapError','sapInactive','turnTotal','turnAvailable','turnUnavailable','turnUnknown','dashboardLastUpdate','turnReportDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});['statusForm','horometerForm','noveltyForm'].forEach(id=>{const form=document.getElementById(id);form?.reset();if(form){delete form.dataset.requestFingerprint;delete form.dataset.requestId;delete form.dataset.uncertainFingerprint;const button=form.querySelector('[type="submit"]');if(button)button.disabled=false;}const message=form?.querySelector('.form-message');if(message)message.textContent='';});pendingNoveltyClosures.clear();setSource();return;}if(activeUserKey&&auth.userKey&&activeUserKey!==auth.userKey){snapshot=null;novedades=null;source='none';storedAt=null;}if(snapshot)render();if(auth.signedIn&&!auth.offline)void refreshNovedades().catch(e=>console.warn(e));else{novedades=null;renderNovedades();}});
 }
 const pendingNoveltyClosures = new Map();
 
@@ -315,7 +315,7 @@ async function closeNovelty(novedadId) {
   try {
     result=await api.closeNovedad(auth.token,request);
   } catch(error) {
-    const uncertain=['TIMEOUT','NETWORK_ERROR','INVALID_JSON'].includes(error?.code)||error?.code==='HTTP_ERROR'&&Number(error?.details?.status)>=500;
+    const uncertain=['TIMEOUT','NETWORK_ERROR','INVALID_JSON'].includes(error?.code)||error?.code==='HTTP_ERROR'&&(Number(error?.details?.status)>=500||Number(error?.details?.status)===404);
     const message=uncertain
       ?'No se pudo confirmar la respuesta. La novedad pudo haberse cerrado; vuelve a pulsar el mismo botón para verificar el cierre sin duplicar la solicitud.'
       :error.message||'No fue posible cerrar la novedad.';
