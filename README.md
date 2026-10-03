@@ -1,34 +1,72 @@
-# Centro de Control SDSO — v0.2.0-dev-r4
+# Centro de Control SDSO — v0.4 en desarrollo
 
-Versión de desarrollo de la etapa v0.2 del Centro de Control web/PWA de Minera Antucoya · Servicios de Soporte a la Operación.
+> La rama `develop-v0.4` contiene la candidata en desarrollo. Lee [docs/V0.4_SCOPE.md](docs/V0.4_SCOPE.md) y [backend/README.md](backend/README.md). En esta rama la configuración corresponde exclusivamente a staging y contiene su endpoint separado; no debe fusionarse en producción sin reemplazar esa configuración.
 
-> Rama de trabajo: `develop-v0.2`. La versión estable publicada permanece en `main` (`v0.1.2`).
+Candidata v0.4 del Centro de Control web/PWA de Minera Antucoya · Servicios de Soporte a la Operación. Producción permanece en v0.3.0 y no se modifica durante AUTH12.
 
-## Alcance v0.2.0-dev-r4
+## Alcance v0.4
 
-- Mantiene navegación principal modular y diseño corporativo responsive.
-- Mantiene App Compresores y Centro Informe como aplicaciones externas dentro de `Aplicaciones SDSO`.
-- Catálogo actual: App Compresores, Centro Informes de Turno, Mantención Clima ANT, Puentes Grúa y Polipastos ANT e Inspección de Polines.
-- Navegación lateral simplificada: Inicio, Aplicaciones SDSO, Dashboard, Power BI e Informes / herramientas.
-- Se eliminan de la barra lateral los accesos redundantes a Compresores y Centro Informe; permanecen disponibles en Aplicaciones SDSO.
-- Mejora resiliencia PWA ante red degradada y respuestas HTTP 5xx.
-- Mejora experiencia móvil y accesibilidad del drawer.
-- Parametriza Aplicaciones, Power BI e Informes/Herramientas desde `js/config.js`.
-- Inicializa una capa IndexedDB sin activar todavía edición offline productiva.
-- Prepara el contrato de `api.js` sin conectar todavía Apps Script.
+- Mantiene la navegación modular: Inicio, Aplicaciones SDSO, Dashboard, Power BI e Informes / herramientas.
+- `#/dashboard` es el catálogo de dashboards SDSO.
+- `#/dashboard-compresores` contiene el primer dashboard nativo.
+- Dashboard Compresores conectado a Google Apps Script + Google Sheets.
+- KPIs, distribución por área/modelo, conciliación SAP, maestro de equipos, búsqueda y filtros.
+- Caché estructurada en IndexedDB para consulta offline.
+- Service Worker para app shell y operación PWA.
+- App Compresores y Centro Informe continúan como aplicaciones externas.
 
-## Aislamiento de desarrollo / producción
-
-Esta entrega usa identificadores de **staging** para que una eventual publicación de desarrollo bajo el mismo origen no elimine ni modifique almacenamiento de producción:
+## Arquitectura
 
 ```text
-environment: staging
-cachePrefix: stg-centro-control-sdso-
-dbName: centro-control-sdso-stg
-lastSyncKey: sdso-stg:lastSync
+GitHub Pages
+  → Frontend / PWA
+  → Google Apps Script
+  → Google Sheets
 ```
 
-Antes del merge `develop-v0.2 → main` deben restaurarse los identificadores de producción:
+Offline:
+
+```text
+Service Worker + Cache Storage + IndexedDB
+```
+
+## Backend v0.4
+
+API Apps Script autenticada para consulta operacional y escritura de editores autorizados:
+
+- `health` público para diagnóstico del despliegue;
+- `getEquipos` y `getDashboardCompresores` requieren sesión autorizada;
+- `getNovedades` requiere sesión autorizada;
+- escrituras requieren además pertenecer a `EDITOR_EMAILS`.
+
+`ALLOWED_EMAILS` es obligatoria y enumera exactamente las cuentas habilitadas. `EDITOR_EMAILS` debe ser un subconjunto de esa lista.
+
+## Datos esperados de Compresores
+
+Estado validado al cierre de esta candidata:
+
+- 31 equipos activos
+- 24 CONFIRMADO SAP
+- 6 PENDIENTE SAP
+- 1 ERROR MAESTRO SAP
+
+Regla operacional v0.4: solo son válidos `OPERATIVO + DISPONIBLE` y `FUERA DE SERVICIO + INDISPONIBLE`. `NO APLICA` se retiró de estado y disponibilidad. Registros heredados con `NO APLICA` —o cualquier combinación fuera de esa matriz— se proyectan como **Sin estado** hasta registrar un estado real. `HISTORIAL_ESTADO` es inmutable: no se corrigen ni eliminan filas históricas.
+
+## IndexedDB
+
+Base configurada por `config.dbName`.
+
+Stores:
+
+- `datasets`
+- `meta`
+- `outbox`
+
+La consulta online no debe depender de IndexedDB. Si el almacenamiento local falla, el dashboard debe seguir mostrando datos recibidos desde red y avisar que no estarán disponibles offline.
+
+## Entornos
+
+Producción:
 
 ```text
 environment: production
@@ -37,105 +75,41 @@ dbName: centro-control-sdso
 lastSyncKey: sdso:lastSync
 ```
 
-Además la versión debe cambiar de `0.2.0-dev-r4` a `0.2.0`.
-
-## Estructura
-
-```text
-/
-├── index.html
-├── manifest.webmanifest
-├── service-worker.js
-├── README.md
-├── CHANGELOG.md
-├── css/
-│   └── app.css
-├── js/
-│   ├── config.js
-│   ├── app.js
-│   ├── api.js
-│   ├── offline.js
-│   ├── db.js
-│   └── auth.js
-├── dashboards/
-│   └── .gitkeep
-├── modules/
-│   └── .gitkeep
-└── assets/
-    └── icons/
-```
-
-## Configuración
-
-La configuración compartida vive en `js/config.js`.
-
-- `version`: versión de desarrollo y del caché PWA.
-- `environment`: entorno actual (`staging` en esta entrega).
-- `cachePrefix`, `dbName`, `lastSyncKey`: identificadores aislados por entorno.
-- `backendUrl`: permanece vacío hasta la etapa de Apps Script.
-- `links`: aplicaciones externas validadas/configuradas.
-- `catalogs.apps`: orden de las aplicaciones mostradas.
-- `catalogs.powerbi`: enlaces Power BI validados.
-- `catalogs.tools`: informes y herramientas validados.
-
-Solo se aceptan enlaces externos `https:`.
-
-## IndexedDB
-
-`js/db.js` crea la base local definida por `config.dbName` con tres stores iniciales:
-
-- `datasets`: datos estructurados cacheados en futuras sincronizaciones.
-- `meta`: metadatos de sincronización/configuración.
-- `outbox`: cola futura para cambios pendientes de sincronización.
-
-La apertura tiene timeout para no bloquear el arranque ni el registro del Service Worker. Se manejan estados `blocked` y `versionchange`. En esta dev no se habilita todavía edición offline.
-
-## Contrato API preparado
-
-`js/api.js` expone:
-
-- `health()`
-- `getConfig()`
-- `getEquipos()`
-- `getDashboard(name)`
-- `sync()`
-
-`health()` solo verifica disponibilidad. **No registra una sincronización exitosa.** `sync()` todavía representa el endpoint futuro; la fecha de última sincronización se actualizará únicamente después de descargar y persistir datos reales.
-
-Los errores de backend se normalizan como `ApiError` con código y mensaje, en vez de propagar errores crudos del navegador.
-
-## Estado offline
-
-- El Service Worker se registra sin esperar a IndexedDB.
-- N2 usa caché válida ante respuestas 5xx.
-- N3 usa caché inmediata durante una ventana de red degradada; al expirar la ventana vuelve a probar la red.
-- El indicador visual online/offline sigue basado en `navigator.onLine` en esta dev.
-- Los estados `SINCRONIZANDO` y `CAMBIOS PENDIENTES` se completarán antes de cerrar v0.2.
-
-## Prueba local
-
-No abrir `index.html` mediante `file://`, porque usa módulos ES y Service Worker. Desde la raíz usar un servidor HTTP local, por ejemplo:
-
-```bash
-python -m http.server 8080
-```
-
-Luego abrir `http://localhost:8080/`.
-
-## Flujo GitHub
-
-1. Mantener `main` como versión estable publicada.
-2. Subir esta entrega únicamente a `develop-v0.2` después de auditoría.
-3. Auditar y probar la rama de desarrollo.
-4. Validar los cinco enlaces externos y el Service Worker de Polines.
-5. Corregir cualquier regresión.
-6. Preparar valores productivos y versión `0.2.0`.
-7. Hacer Pull Request `develop-v0.2` → `main` solo cuando v0.2 sea aprobada.
-
-## Publicación en GitHub Pages
-
-La versión productiva se publica desde `main` mediante GitHub Pages. La rama `develop-v0.2` no debe reemplazar la fuente de Pages de producción. Si se crea un sitio de staging bajo el mismo origen `apps-mtto-ant.github.io`, debe conservar los identificadores `*-stg-*` definidos en esta entrega.
+Staging usa identificadores separados con prefijo `stg-`.
 
 ## Regla de despliegue PWA
 
-Todo cambio de HTML, CSS, JS, manifest o recursos del app shell debe incrementar `version` en `js/config.js`. El Service Worker usa ese valor para crear un nuevo caché y elimina únicamente cachés anteriores cuyo nombre comienza con el `cachePrefix` del entorno actual.
+Todo release que modifique HTML, CSS, JS, manifest o app shell debe incrementar `version` en `js/config.js`.
+
+Al tomar control un Service Worker nuevo, la app realiza una única recarga controlada para evitar combinaciones de HTML nuevo con assets HTTP antiguos.
+
+## Publicación
+
+Producción:
+
+```text
+https://apps-mtto-ant.github.io/centro-control-sdso/
+```
+
+Staging:
+
+```text
+https://apps-mtto-ant.github.io/centro-control-sdso-stg/
+```
+
+## Flujo de liberación
+
+1. Desarrollo en `develop-v0.4`.
+2. Sincronización a staging.
+3. Pruebas online, offline, actualización PWA y backend.
+4. Correcciones de auditoría.
+5. Revisión final.
+6. Revisión pre-release de configuración para separar staging de producción.
+7. Merge controlado de `develop-v0.4 → main` solo después de aprobación.
+8. Validación productiva y tag/release correspondiente.
+
+## Pendiente posterior
+
+- Validación final de PWA instalada en iPhone y operación offline/online.
+- Revisión pre-release para sustituir toda configuración específica de staging antes de `main`.
+- Paridad funcional progresiva con dashboards históricos donde aún corresponda.
