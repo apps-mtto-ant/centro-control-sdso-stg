@@ -17,6 +17,9 @@
 - AUTH12 resiliencia: timeout HTTP del frontend ampliado de 12 s a 30 s manteniendo reintentos idempotentes con el mismo requestId.
 - AUTH12 smoke: corregida expectativa de conteo legado, agregada verificación de disponibilidad derivada en HISTORIAL_ESTADO y cobertura de legado contradictorio.
 - Pre-release: se agrega chequeo automático para impedir merge/release con marcadores de configuración staging.
+- Pre-release: el guard cubre además la URL del backend STG, la versión `-stg-`, la cabecera del service worker y los indicadores visibles `STAGING`; se ejecuta automáticamente en Pull Request hacia `main`.
+- AUTH12 smoke: se agregan tres casos de legado contradictorio adicionales (`FUERA DE SERVICIO + DISPONIBLE`, `OPERATIVO + NO APLICA`, `OVERHAUL + vacío`).
+- Documentación: README y scope incorporan contrato de operación offline (12 h, solo lectura, identidad visual local, revalidación Google y timeout/reintentos).
 
 ## v0.3.0 — candidata
 
