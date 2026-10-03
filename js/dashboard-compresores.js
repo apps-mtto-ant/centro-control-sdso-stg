@@ -204,7 +204,7 @@ function renderNovedades() {
 function syncEditorUi() {
   const isEditor=auth.can('editar');
   document.querySelectorAll('[data-editor-only]').forEach(el=>{el.hidden=!isEditor;});
-  const signOut=$('#signOutButton');if(signOut)signOut.hidden=!auth.hasAccess||auth.offline;
+  const signOut=$('#signOutButton');if(signOut)signOut.hidden=!auth.hasAccess||auth.offline||!navigator.onLine;
 }
 function render() {
   syncEditorUi();
@@ -312,7 +312,7 @@ async function submitForm(form, method, success) {
 function bindForm(id,method,message) {const form=$(`#${id}`);form?.addEventListener('submit',event=>{event.preventDefault();if(form.reportValidity())void submitForm(form,method,message);});}
 export function initDashboardCompresores() {
   if(initialized)return;initialized=true;
-  window.addEventListener('online',()=>{setSource();if(auth.hasAccess)void loadCaptureLibrary();});window.addEventListener('offline',setSource);
+  window.addEventListener('online',()=>{syncEditorUi();setSource();if(auth.hasAccess)void loadCaptureLibrary();});window.addEventListener('offline',()=>{syncEditorUi();setSource();});
   $$('.dashboard-tab').forEach(button=>button.addEventListener('click',()=>setTab(button.dataset.tab)));
   ['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);el?.addEventListener(id==='dashboardSearch'?'input':'change',renderTable);});
   $('#dashboardClearFilters')?.addEventListener('click',()=>{['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderTable();});
