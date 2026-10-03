@@ -15,6 +15,22 @@ let initialized = false;
 let loading = null;
 let activeTab = 'resumen';
 let activeUserKey = '';
+const CAPTURE_SCRIPT_URL='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+const CAPTURE_SCRIPT_INTEGRITY='sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
+let captureLibraryPromise=null;
+function loadCaptureLibrary(){
+  if(typeof globalThis.html2canvas==='function')return Promise.resolve(true);
+  if(!navigator.onLine)return Promise.resolve(false);
+  if(captureLibraryPromise)return captureLibraryPromise;
+  captureLibraryPromise=new Promise(resolve=>{
+    const script=document.createElement('script');
+    script.src=CAPTURE_SCRIPT_URL;script.integrity=CAPTURE_SCRIPT_INTEGRITY;script.crossOrigin='anonymous';script.referrerPolicy='no-referrer';script.defer=true;
+    script.onload=()=>resolve(typeof globalThis.html2canvas==='function');
+    script.onerror=()=>{script.remove();captureLibraryPromise=null;resolve(false);};
+    document.head.append(script);
+  });
+  return captureLibraryPromise;
+}
 
 const clean = v => v == null || v === '' ? '—' : String(v);
 const nrm = v => (v == null ? '' : String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -214,6 +230,7 @@ function setTab(name) {
 }
 async function capture(tabName=activeTab) {
   const panel=$(`[data-panel="${tabName}"]`);if(!panel)return;
+  if(typeof globalThis.html2canvas!=='function')await loadCaptureLibrary();
   if(typeof globalThis.html2canvas!=='function'){window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'La captura PNG no está disponible; se abrirá la opción de imprimir o guardar como PDF.'}));window.print();return;}
   const button=tabName==='turno'?$('#captureTurnReport'):$('#captureActiveTab');const original=button?.textContent;if(button){button.disabled=true;button.textContent='Preparando captura…';}
   try {
@@ -274,7 +291,7 @@ async function submitForm(form, method, success) {
 function bindForm(id,method,message) {const form=$(`#${id}`);form?.addEventListener('submit',event=>{event.preventDefault();if(form.reportValidity())void submitForm(form,method,message);});}
 export function initDashboardCompresores() {
   if(initialized)return;initialized=true;
-  window.addEventListener('online',setSource);window.addEventListener('offline',setSource);
+  window.addEventListener('online',()=>{setSource();if(auth.hasAccess)void loadCaptureLibrary();});window.addEventListener('offline',setSource);
   $$('.dashboard-tab').forEach(button=>button.addEventListener('click',()=>setTab(button.dataset.tab)));
   ['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);el?.addEventListener(id==='dashboardSearch'?'input':'change',renderTable);});
   $('#dashboardClearFilters')?.addEventListener('click',()=>{['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderTable();});
@@ -282,7 +299,7 @@ export function initDashboardCompresores() {
   $('#refreshNovedades')?.addEventListener('click',()=>void refreshNovedades().catch(e=>window.dispatchEvent(new CustomEvent('sdso:toast',{detail:e.message}))));
   $('#noveltyList')?.addEventListener('click',event=>{const id=event.target.closest('[data-close-novelty]')?.dataset.closeNovelty;if(!id)return;if(!auth.can('editar'))return;void closeNovelty(id);});
   bindForm('statusForm',api.saveEstado,'Estado actualizado.');bindForm('horometerForm',api.saveHorometro,'Lectura de horómetro registrada.');bindForm('noveltyForm',api.saveNovedad,'Novedad registrada.');
-  auth.init(state=>{if(!state?.authorized){snapshot=null;novedades=null;source='none';storedAt=null;activeUserKey='';['equipmentTableBody','horometerTableBody','turnAreaBody','criticalList','areaSummary','areaBoard','areaStatusChart','availabilityChart','fleetChart','availabilityMiniChart','noveltyMiniChart','criticalStatusChart','sapReconciliationRows','turnAreaChart','noveltyList','turnNoveltySummary'].forEach(id=>document.getElementById(id)?.replaceChildren());['kpiTotal','kpiDisponibles','kpiIndisponibles','kpiSinEstado','kpiNovedades','availabilityRate','availabilityBase','availabilityMissing','criticalTotal','criticalAvailable','criticalUnavailable','criticalUnknown','sapConfirmed','sapPending','sapError','sapInactive','turnTotal','turnAvailable','turnUnavailable','turnUnknown','dashboardLastUpdate','turnReportDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});['statusForm','horometerForm','noveltyForm'].forEach(id=>{const form=document.getElementById(id);form?.reset();const message=form?.querySelector('.form-message');if(message)message.textContent='';});setSource();return;}if(activeUserKey&&auth.userKey&&activeUserKey!==auth.userKey){snapshot=null;novedades=null;source='none';storedAt=null;}if(snapshot)render();if(auth.signedIn&&!auth.offline)void refreshNovedades().catch(e=>console.warn(e));else{novedades=null;renderNovedades();}});
+  auth.init(state=>{if(state?.authorized)void loadCaptureLibrary();if(!state?.authorized){snapshot=null;novedades=null;source='none';storedAt=null;activeUserKey='';['equipmentTableBody','horometerTableBody','turnAreaBody','criticalList','areaSummary','areaBoard','areaStatusChart','availabilityChart','fleetChart','availabilityMiniChart','noveltyMiniChart','criticalStatusChart','sapReconciliationRows','turnAreaChart','noveltyList','turnNoveltySummary'].forEach(id=>document.getElementById(id)?.replaceChildren());['kpiTotal','kpiDisponibles','kpiIndisponibles','kpiSinEstado','kpiNovedades','availabilityRate','availabilityBase','availabilityMissing','criticalTotal','criticalAvailable','criticalUnavailable','criticalUnknown','sapConfirmed','sapPending','sapError','sapInactive','turnTotal','turnAvailable','turnUnavailable','turnUnknown','dashboardLastUpdate','turnReportDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});['statusForm','horometerForm','noveltyForm'].forEach(id=>{const form=document.getElementById(id);form?.reset();const message=form?.querySelector('.form-message');if(message)message.textContent='';});setSource();return;}if(activeUserKey&&auth.userKey&&activeUserKey!==auth.userKey){snapshot=null;novedades=null;source='none';storedAt=null;}if(snapshot)render();if(auth.signedIn&&!auth.offline)void refreshNovedades().catch(e=>console.warn(e));else{novedades=null;renderNovedades();}});
 }
 const pendingNoveltyClosures = new Map();
 
