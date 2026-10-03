@@ -1,3 +1,4 @@
+import { setMeta } from './db.js';
 const CONFIG = globalThis.SDSO_CONFIG;
 const LAST_SYNC_KEY = CONFIG?.lastSyncKey || 'sdso:lastSync';
 
@@ -8,6 +9,7 @@ function pad(value) {
 export function markSuccessfulSync(date = new Date()) {
   try {
     localStorage.setItem(LAST_SYNC_KEY, date.toISOString());
+    void setMeta('lastSyncAt', date.toISOString()).catch(() => {});
   } catch {
     // Si el almacenamiento local está bloqueado, la app continúa sin persistir la fecha.
   }

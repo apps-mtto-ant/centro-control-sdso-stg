@@ -111,6 +111,20 @@ export async function getDataset(key, timeoutMs = DEFAULT_IO_TIMEOUT_MS) {
   }
 }
 
+export async function deleteDataset(key, timeoutMs = DEFAULT_IO_TIMEOUT_MS) {
+  try {
+    const db = await withTimeout(openDatabase(), timeoutMs, 'Apertura IndexedDB');
+    if (!db) return false;
+    const tx = db.transaction(STORES.datasets, 'readwrite');
+    tx.objectStore(STORES.datasets).delete(key);
+    await withTimeout(transactionDone(tx), timeoutMs, 'Eliminación IndexedDB');
+    return true;
+  } catch (error) {
+    dbPromise = null;
+    throw error;
+  }
+}
+
 export async function setMeta(key, value) {
   const db = await openDatabase();
   if (!db) return false;
@@ -125,6 +139,15 @@ export async function getMeta(key) {
   if (!db) return null;
   const tx = db.transaction(STORES.meta, 'readonly');
   return (await requestToPromise(tx.objectStore(STORES.meta).get(key))) ?? null;
+}
+
+export async function deleteMeta(key) {
+  const db = await openDatabase();
+  if (!db) return false;
+  const tx = db.transaction(STORES.meta, 'readwrite');
+  tx.objectStore(STORES.meta).delete(key);
+  await transactionDone(tx);
+  return true;
 }
 
 export const localDb = Object.freeze({

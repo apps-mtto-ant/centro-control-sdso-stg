@@ -86,7 +86,7 @@ function setDrawer(open, { restoreFocus = true } = {}) {
 }
 
 function renderSection(section) {
-  if (!auth.signedIn) { $('#authGate').hidden = false; $('#appShell').hidden = true; return; }
+  if (!auth.hasAccess) { $('#authGate').hidden = false; $('#appShell').hidden = true; return; }
   $('#authGate').hidden = true;
   $('#appShell').hidden = false;
   if (!titles[section]) section = 'inicio';
@@ -263,10 +263,11 @@ function bindEvents() {
   document.addEventListener('keydown', event => { if (event.key === 'Escape') setDrawer(false); });
   window.addEventListener('hashchange', () => renderSection(currentSectionFromHash()));
   window.addEventListener('sdso:auth', event => {
-    const authenticated = Boolean(event.detail?.authenticated && auth.signedIn);
-    $('#authGate').hidden = authenticated;
-    $('#appShell').hidden = !authenticated;
-    if (authenticated) renderSection(currentSectionFromHash());
+    const authorized = Boolean(event.detail?.authorized && auth.hasAccess);
+    $('#authGate').hidden = authorized;
+    $('#appShell').hidden = !authorized;
+    $('#signOutButton').hidden = !authorized;
+    if (authorized) renderSection(currentSectionFromHash());
     else { $('#appShell').hidden = true; }
   });
   window.addEventListener('resize', () => {
@@ -277,9 +278,11 @@ function bindEvents() {
     updateConnectivity();
     showToast(navigator.onLine ? 'Conexión disponible' : 'No hay conexión disponible');
   });
+  $('#signOutButton').addEventListener('click', () => auth.signOut());
   window.addEventListener('online', () => {
     updateConnectivity();
     showToast('Conexión restablecida');
+    if (auth.offline) { window.location.reload(); return; }
     if (auth.signedIn && currentSectionFromHash() === 'dashboard-compresores') void loadDashboardCompresores();
   });
   window.addEventListener('offline', () => { updateConnectivity(); showToast('Centro operando sin conexión'); });

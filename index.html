@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#00778B">
   <meta name="description" content="Centro de Control SDSO - Minera Antucoya, Servicios de Soporte a la Operación">
-  <title>Centro de Control SDSO</title>
+  <title>Centro de Control SDSO · STAGING</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./assets/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
   <link rel="stylesheet" href="./css/app.css">
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 </head>
 <body>
   <section class="auth-gate" id="authGate" aria-labelledby="authGateTitle">
@@ -30,6 +30,7 @@
         <div class="brand-copy">
           <strong>Minera Antucoya</strong>
           <span>Servicios de Soporte a la Operación</span>
+          <span class="environment-badge">STAGING · ENTORNO DE PRUEBAS</span>
         </div>
       </div>
 
@@ -59,7 +60,7 @@
       <header class="topbar">
         <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
         <div>
-          <p class="eyebrow">CENTRO DE CONTROL SDSO</p>
+          <p class="eyebrow">CENTRO DE CONTROL SDSO <span class="environment-badge">STAGING</span></p>
           <h1 id="pageTitle">Inicio</h1>
         </div>
         <div class="topbar-status" aria-live="polite">
@@ -69,6 +70,7 @@
           <div class="sync-meta">Última sincronización: <span class="last-sync">Sin sincronizar</span></div>
         </div>
         <div class="topbar-actions">
+          <button class="icon-btn" id="signOutButton" type="button" hidden>Cerrar sesión</button>
           <button class="icon-btn" id="installButton" type="button" hidden>Instalar app</button>
           <button class="icon-btn" id="refreshButton" type="button" title="Verificar conexión" aria-label="Verificar conexión">Verificar</button>
         </div>
@@ -210,8 +212,8 @@
             <div class="dashboard-actions"><span id="dashboardSource" class="data-source">Cargando…</span><button id="dashboardRefresh" class="primary-btn" type="button">Actualizar datos</button><button id="captureActiveTab" class="icon-btn" type="button">Capturar vista</button></div>
           </div>
           <section class="panel editor-access" id="editorAccessPanel">
-            <div><p class="eyebrow">REGISTRO OPERACIONAL</p><strong id="editorAuthStatus">Modo consulta</strong><p>La supervisora registra estado, horómetros y novedades desde el dashboard.</p></div>
-            <div class="editor-auth-actions"><div id="googleSignIn"></div><button id="signOutButton" class="icon-btn" type="button" hidden>Cerrar sesión</button></div>
+            <div><p class="eyebrow">REGISTRO OPERACIONAL</p><strong id="editorAuthStatus">Modo consulta</strong><p>El equipo de supervisión registra estado, horómetros y novedades desde el dashboard.</p></div>
+            <div class="editor-auth-actions"><div id="googleSignIn"></div></div>
           </section>
           <nav class="dashboard-tabs" aria-label="Vistas de Compresores" role="tablist">
             <button class="dashboard-tab is-active" data-tab="resumen" role="tab" aria-selected="true">Resumen</button>
@@ -242,21 +244,21 @@
             <section class="panel"><div class="equipment-toolbar"><div><p class="eyebrow">SITUACIÓN DEL TURNO</p><h3>Resumen por área</h3></div></div><div id="areaSummary" class="area-card-grid"></div></section>
           </section>
 
-          <section class="dashboard-tab-panel" data-panel="areas" role="tabpanel" hidden><section class="panel editor-form-panel" data-editor-only hidden><div><p class="eyebrow">SUPERVISORA</p><h3>Actualizar estado operacional</h3><p class="helper-text">Actualiza el estado vigente del equipo en la hoja ESTADO_ACTUAL.</p></div><form id="statusForm" class="editor-form"><label>Fecha y hora<input name="fechaHora" type="datetime-local" required></label><label>Equipo<select name="equipoId" class="equipment-select" required></select></label><label>Estado<select name="estado" data-list="estadoOperacional" required></select></label><label>Disponibilidad<select name="disponibilidad" data-list="disponibilidad" required></select></label><label>Subestado (opcional)<input name="subestado" maxlength="120"></label><label>Ubicación actual (opcional)<input name="ubicacionActual" maxlength="160"></label><label class="form-wide">Observación (opcional)<textarea name="observacion" rows="2" maxlength="1000"></textarea></label><button class="primary-btn" type="submit">Guardar estado</button><p class="form-message" aria-live="polite"></p></form></section><div class="panel"><p class="eyebrow">ESTADO ACTUAL</p><h3>Estado por área</h3><div id="areaStatusChart" class="chart-bars"></div><div id="areaBoard" class="area-card-grid"></div></div></section>
+          <section class="dashboard-tab-panel" data-panel="areas" role="tabpanel" hidden><section class="panel editor-form-panel" data-editor-only hidden><div><p class="eyebrow">PERFIL EDITOR</p><h3>Actualizar estado operacional</h3><p class="helper-text">Actualiza el estado vigente del equipo en la hoja ESTADO_ACTUAL.</p></div><form id="statusForm" class="editor-form"><label>Fecha y hora<input name="fechaHora" type="datetime-local" required></label><label>Equipo<select name="equipoId" class="equipment-select" required></select></label><label>Estado<select name="estado" data-list="estadoOperacional" required></select></label><label>Disponibilidad<select name="disponibilidad" data-list="disponibilidad" required></select></label><label>Subestado (opcional)<input name="subestado" maxlength="120"></label><label>Ubicación actual (opcional)<input name="ubicacionActual" maxlength="160"></label><label class="form-wide">Observación (opcional)<textarea name="observacion" rows="2" maxlength="1000"></textarea></label><button class="primary-btn" type="submit">Guardar estado</button><p class="form-message" aria-live="polite"></p></form></section><div class="panel"><p class="eyebrow">ESTADO ACTUAL</p><h3>Estado por área</h3><div id="areaStatusChart" class="chart-bars"></div><div id="areaBoard" class="area-card-grid"></div></div></section>
           <section class="dashboard-tab-panel" data-panel="disponibilidad" role="tabpanel" hidden><div class="kpi-grid compact-kpis"><article class="kpi-card kpi-ok"><span>Disponibilidad</span><strong id="availabilityRate">—</strong></article><article class="kpi-card"><span>Base con estado</span><strong id="availabilityBase">0</strong></article><article class="kpi-card kpi-pending"><span>Sin estado</span><strong id="availabilityMissing">0</strong></article></div><section class="panel"><p class="eyebrow">POR ÁREA</p><h3>Disponibilidad de flota</h3><div id="availabilityChart" class="chart-bars"></div></section></section>
 
           <section class="dashboard-tab-panel" data-panel="criticos" role="tabpanel" hidden><div class="kpi-grid compact-kpis"><article class="kpi-card"><span>Marcados críticos</span><strong id="criticalTotal">0</strong></article><article class="kpi-card kpi-ok"><span>Disponibles</span><strong id="criticalAvailable">0</strong></article><article class="kpi-card kpi-error"><span>Indisponibles</span><strong id="criticalUnavailable">0</strong></article><article class="kpi-card kpi-pending"><span>Sin estado</span><strong id="criticalUnknown">0</strong></article></div><section class="panel"><p class="eyebrow">MAESTRO_EQUIPOS · ES_CRITICO</p><h3>Críticos frente a equipos sin novedad abierta</h3><p id="criticalSourceNote" class="helper-text"></p><div id="criticalStatusChart" class="chart-bars"></div><div id="criticalList" class="area-card-grid"></div></section></section>
 
           <section class="dashboard-tab-panel" data-panel="horometros" role="tabpanel" hidden>
-            <section class="panel editor-form-panel" data-editor-only hidden><div><p class="eyebrow">SUPERVISORA</p><h3>Registrar lectura de horómetro</h3><p class="helper-text">La lectura se agrega al historial. El horómetro vigente se calcula desde la lectura más reciente.</p></div>
+            <section class="panel editor-form-panel" data-editor-only hidden><div><p class="eyebrow">PERFIL EDITOR</p><h3>Registrar lectura de horómetro</h3><p class="helper-text">La lectura se agrega al historial. El horómetro vigente se calcula desde la lectura más reciente.</p></div>
               <form id="horometerForm" class="editor-form"><label>Fecha y hora<input name="fechaHora" type="datetime-local" required></label><label>Equipo<select name="equipoId" class="equipment-select" required></select></label><label>Horómetro actual<input name="horometro" type="number" min="0" step="0.1" inputmode="decimal" required></label><label>Observación (opcional)<input name="observacion" maxlength="500"></label><button class="primary-btn" type="submit">Guardar lectura</button><p class="form-message" aria-live="polite"></p></form>
             </section>
-            <section class="panel"><p class="eyebrow">LECTURAS RECIENTES</p><h3>Horómetros vigentes</h3><div class="table-scroll"><table class="equipment-table"><thead><tr><th>Equipo</th><th>Área</th><th>Horómetro</th><th>Fecha lectura</th><th>Última actualización</th></tr></thead><tbody id="horometerTableBody"></tbody></table></div></section>
+            <section class="panel"><p class="eyebrow">LECTURAS RECIENTES</p><h3>Horómetros vigentes</h3><div class="table-scroll"><table class="equipment-table"><thead><tr><th>Denominación</th><th>EQ</th><th>SAP</th><th>Área</th><th>Modelo</th><th>Horómetro (h)</th><th>Fecha lectura</th><th>Última actualización</th></tr></thead><tbody id="horometerTableBody"></tbody></table></div></section>
             <p class="helper-text">Los intervalos de mantenimiento todavía no están definidos en el maestro; esta vista no estima vencimientos.</p>
           </section>
 
           <section class="dashboard-tab-panel" data-panel="novedades" role="tabpanel" hidden>
-            <section class="panel editor-form-panel" data-editor-only hidden><div><p class="eyebrow">SUPERVISORA</p><h3>Registrar novedad</h3><p class="helper-text">La novedad queda abierta y se conserva en el historial operacional.</p></div>
+            <section class="panel editor-form-panel" data-editor-only hidden><div><p class="eyebrow">PERFIL EDITOR</p><h3>Registrar novedad</h3><p class="helper-text">La novedad queda abierta y se conserva en el historial operacional.</p></div>
               <form id="noveltyForm" class="editor-form"><label>Fecha y hora<input name="fechaHora" type="datetime-local" required></label><label>Equipo<select name="equipoId" class="equipment-select" required></select></label><label>Tipo<select name="tipo" data-list="tipoNovedad" required></select></label><label>Criticidad<select name="criticidad" data-list="criticidad" required></select></label><label class="form-wide">Descripción<textarea name="descripcion" rows="3" minlength="5" maxlength="2000" required></textarea></label><button class="primary-btn" type="submit">Guardar novedad</button><p class="form-message" aria-live="polite"></p></form>
             </section>
             <section class="panel"><div class="equipment-toolbar"><div><p class="eyebrow">SEGUIMIENTO OPERACIONAL</p><h3>Novedades abiertas</h3></div><button id="refreshNovedades" class="icon-btn" type="button">Actualizar novedades</button></div><div id="noveltyList" class="novelty-list"></div></section>
@@ -266,7 +268,7 @@
 
           <section class="dashboard-tab-panel" data-panel="sap" role="tabpanel" hidden><div class="kpi-grid compact-kpis"><article class="kpi-card kpi-ok"><span>Confirmados</span><strong id="sapConfirmed">0</strong></article><article class="kpi-card kpi-pending"><span>Pendientes</span><strong id="sapPending">0</strong></article><article class="kpi-card kpi-error"><span>Error maestro</span><strong id="sapError">0</strong></article><article class="kpi-card"><span>Inactivos</span><strong id="sapInactive">0</strong></article></div><section class="panel"><p class="eyebrow">CALCULADA DESDE MAESTRO_EQUIPOS</p><h3>Conciliación vigente</h3><p id="sapReconciliationNote" class="helper-text">Este resumen se calcula al cargar el maestro. La hoja CONCILIACION deja de ser una fuente manual.</p><div id="sapReconciliationRows" class="distribution-list"></div></section></section>
 
-          <section class="dashboard-tab-panel" data-panel="turno" role="tabpanel" hidden><div class="turn-report-heading"><div><p class="eyebrow">INFORME FIN DE TURNO</p><h3>Estado operacional de Compresores</h3><p id="turnReportDate"></p></div><div class="dashboard-actions"><button id="captureTurnReport" class="primary-btn" type="button">Capturar informe</button><button id="printTurnReport" class="icon-btn" type="button">Imprimir / Guardar PDF</button></div></div><div class="kpi-grid compact-kpis"><article class="kpi-card"><span>Equipos KPI</span><strong id="turnTotal">0</strong></article><article class="kpi-card kpi-ok"><span>Disponibles</span><strong id="turnAvailable">0</strong></article><article class="kpi-card kpi-error"><span>Indisponibles</span><strong id="turnUnavailable">0</strong></article><article class="kpi-card kpi-pending"><span>Sin estado</span><strong id="turnUnknown">0</strong></article></div><section class="panel"><h3>Situación por área</h3><div class="table-scroll"><table class="equipment-table fin-shift-table"><thead><tr><th>Área</th><th>Equipos</th><th>Disponibles</th><th>Indisponibles</th><th>Sin estado</th><th>Novedades abiertas</th></tr></thead><tbody id="turnAreaBody"></tbody></table></div></section><section class="panel"><h3>Novedades abiertas del turno</h3><div id="turnNoveltySummary" class="novelty-list"></div></section></section>
+          <section class="dashboard-tab-panel" data-panel="turno" role="tabpanel" hidden><div class="turn-report-heading"><div><p class="eyebrow">INFORME FIN DE TURNO</p><h3>Estado operacional de Compresores</h3><p id="turnReportDate"></p></div><div class="dashboard-actions"><button id="captureTurnReport" class="primary-btn" type="button">Capturar informe</button><button id="printTurnReport" class="icon-btn" type="button">Imprimir / Guardar PDF</button></div></div><div class="kpi-grid compact-kpis"><article class="kpi-card"><span>Equipos KPI</span><strong id="turnTotal">0</strong></article><article class="kpi-card kpi-ok"><span>Disponibles</span><strong id="turnAvailable">0</strong></article><article class="kpi-card kpi-error"><span>Indisponibles</span><strong id="turnUnavailable">0</strong></article><article class="kpi-card kpi-pending"><span>Sin estado</span><strong id="turnUnknown">0</strong></article></div><section class="panel"><h3>Situación por área</h3><div id="turnAreaChart" class="shift-area-chart" aria-label="Gráfico de estado de equipos por área"></div><div class="shift-chart-legend"><span><i class="available"></i>Disponibles</span><span><i class="unavailable"></i>Indisponibles</span><span><i class="unknown"></i>Sin estado</span></div><div class="table-scroll"><table class="equipment-table fin-shift-table"><thead><tr><th>Área</th><th>Equipos</th><th>Disponibles</th><th>Indisponibles</th><th>Sin estado</th><th>Novedades abiertas</th></tr></thead><tbody id="turnAreaBody"></tbody></table></div></section><section class="panel"><h3>Novedades abiertas del turno</h3><div id="turnNoveltySummary" class="novelty-list"></div></section></section>
         </section>
 
         <section class="view" data-view="powerbi">

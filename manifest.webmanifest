@@ -1,8 +1,8 @@
 {
-  "id": "./",
-  "name": "Centro de Control SDSO",
-  "short_name": "Centro SDSO",
-  "description": "Centro de Control de Servicios de Soporte a la Operación - Minera Antucoya",
+  "id": "./?environment=staging",
+  "name": "Centro de Control SDSO · STAGING",
+  "short_name": "SDSO STG",
+  "description": "Entorno de pruebas de Centro de Control SDSO - Minera Antucoya",
   "lang": "es-CL",
   "start_url": "./",
   "scope": "./",
