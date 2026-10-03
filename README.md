@@ -52,6 +52,16 @@ Estado validado al cierre de esta candidata:
 
 Regla operacional v0.4: el usuario selecciona únicamente el estado. La disponibilidad es derivada por backend y frontend: `OPERATIVO` y `STAND BY` → `DISPONIBLE`; `FUERA DE SERVICIO`, `OVERHAUL`, `MANTENCION` y `FALLA` → `NO DISPONIBLE`. Para datos heredados, un estado reconocido es la fuente de verdad aunque la disponibilidad almacenada sea contradictoria: la lectura proyecta la disponibilidad canónica derivada sin modificar la fila original. `NO APLICA` no forma parte del modelo; solo estados heredados no reconocidos se proyectan como **Sin estado**. `HISTORIAL_ESTADO` es inmutable: no se corrigen ni eliminan filas históricas.
 
+## Operación offline y reconexión
+
+- El acceso offline es **solo lectura** y usa la última caché válida de Compresores.
+- La habilitación offline tiene una vigencia máxima de **12 horas** desde la última sincronización válida.
+- La identidad visual del último usuario autorizado (correo/rol) puede conservarse localmente, pero el **Google ID token no se persiste**.
+- Edición exige simultáneamente rol `EDITOR`, token válido en memoria y `navigator.onLine = true`; el backend vuelve a validar autorización.
+- Si la PWA arranca sin red con una caché vigente, puede abrir el dashboard sin login y sin formularios de edición ni botón `Cerrar sesión`.
+- Al recuperar red tras un arranque en frío offline, `Verificar` solicita autenticación Google nuevamente antes de volver al modo online.
+- Las llamadas al backend usan timeout de **30 s** y hasta **2 intentos**; las escrituras reutilizan el mismo `requestId` para evitar duplicados.
+
 ## IndexedDB
 
 Base configurada por `config.dbName`.
