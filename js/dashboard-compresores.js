@@ -305,10 +305,15 @@ async function closeNovelty(novedadId) {
     window.dispatchEvent(new CustomEvent('sdso:toast',{detail:message}));
     return;
   }
-  if(!result?.ok){
-    pendingNoveltyClosures.delete(novedadId);
-    expireOnAuthError(result);
-    window.dispatchEvent(new CustomEvent('sdso:toast',{detail:result?.error?.message||'El backend rechazó el cierre de la novedad.'}));
+  if(result?.ok!==true){
+    const code=String(result?.error?.code||'');
+    if(result?.ok===false&&code&&code!=='INTERNAL_ERROR'){
+      pendingNoveltyClosures.delete(novedadId);
+      expireOnAuthError(result);
+      window.dispatchEvent(new CustomEvent('sdso:toast',{detail:result?.error?.message||'El backend rechazó el cierre de la novedad.'}));
+    } else {
+      window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'La respuesta no confirma si se cerró. La novedad pudo haberse cerrado; vuelve a pulsar el mismo botón para verificarla sin duplicar la solicitud.'}));
+    }
     return;
   }
   pendingNoveltyClosures.delete(novedadId);
