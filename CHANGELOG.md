@@ -1,50 +1,96 @@
 # CHANGELOG — Centro de Control SDSO
 
-## v0.2.0-dev-r4
+# v0.4.0 — desarrollo
 
-### Ajustes r4
-- Corrige N-1: el prefijo de caché de staging pasa a `stg-centro-control-sdso-`, evitando que el prefijo productivo pueda coincidir con él.
+- Dashboard Compresores reestructurado en vistas operacionales para resumen, áreas, disponibilidad, horómetros, novedades, maestro, SAP y fin de turno.
+- Formularios de supervisión previstos para estado vigente, lecturas y novedades; escritura requiere sesión validada por Apps Script y lista de editores.
+- Fuente del horómetro vigente definida como última lectura del historial.
+- Conciliación SAP calculada desde MAESTRO_EQUIPOS. Se agregan validación/idempotencia de registros y respuesta pública reducida.
+- Captura de vista activa e informe fin de turno con alternativa de impresión/PDF.
+- No habilitar formularios hasta desplegar y validar el backend y el Sheet de staging.
+- AUTH12: matriz de estado cerrada a `OPERATIVO + DISPONIBLE` y `FUERA DE SERVICIO + INDISPONIBLE`; las demás combinaciones se rechazan en backend.
+- AUTH12: `NO APLICA` se elimina de los selectores y de las vistas/KPI. Registros heredados con `NO APLICA` o combinaciones inconsistentes se muestran como **Sin estado** sin modificar `HISTORIAL_ESTADO`.
+- AUTH12: la interfaz mantiene estado y disponibilidad emparejados automáticamente para evitar combinaciones inválidas.
+- AUTH12 rc6: `ALLOWED_EMAILS` es obligatoria en todos los modos; `EDITOR_EMAILS` debe ser subconjunto de la allowlist.
+- AUTH12 rc6: corregido bloqueo de render del frontend (`querySelectorAll` para controles `data-list`), normalización defensiva de snapshots heredados/caché y versión PWA `0.4.0-stg-auth12c`.
+- AUTH12 rc6: smoke principal actualizada a la matriz cerrada con pruebas conductuales de combinaciones cruzadas, datos heredados y encabezado no clave de `HISTORIAL_ESTADO`.
+
+## v0.3.0 — candidata
+
+### Dashboard Compresores
+- Primer dashboard nativo conectado a Google Apps Script + Google Sheets.
+- 31 equipos activos con KPIs, distribución por área/modelo, conciliación SAP, tabla, búsqueda y filtros.
+- Catálogo de dashboards separado de la vista específica de Compresores: `#/dashboard` → catálogo, `#/dashboard-compresores` → dashboard.
+
+### Offline / resiliencia
+- Dataset de Compresores persistido en IndexedDB.
+- Fallback a caché local validado con recarga completa sin Internet.
+- La consulta de red se inicia sin esperar a IndexedDB.
+- Si la persistencia local falla, los datos válidos de red siguen renderizándose.
+- No se sustituye una caché válida por un snapshot vacío.
+- Timeout de operaciones IndexedDB y recuperación de conexión.
+- Recarga única cuando un Service Worker nuevo toma el control para evitar assets antiguos.
+- Retry del backend ante fallos transitorios.
+
+### Auditoría
+- Reauditoría de cierre: APTO, sin bloqueadores.
+- R1/R2 cerrados antes del release: protección contra snapshot vacío con IndexedDB lenta y estado activo del menú Dashboard en la vista Compresores.
+- Auditoría integrada: 0 críticos, 4 altos, 13 medios y 10 bajos.
+- Correcciones obligatorias frontend A01/A02/A03/A05 incorporadas en candidata r4.
+- Pendientes de backend antes del release: validación de encabezados, reducción de metadata en `health` y minimización de campos públicos.
+
+### Datos
+- Conciliación validada: 24 CONFIRMADO, 6 PENDIENTE SAP, 1 ERROR MAESTRO SAP.
+- EQ01, EQ16 y EQ17 confirmados operacionalmente por Mario.
+
+## v0.2.0 — 2026-10-02
+
+Primera versión estable de la etapa v0.2.
+
+### Navegación y organización
 - Navegación lateral simplificada: Inicio, Aplicaciones SDSO, Dashboard, Power BI e Informes / herramientas.
-- Se retiran Compresores y Centro Informe de la barra lateral por redundancia; siguen disponibles dentro de Aplicaciones SDSO y mediante sus rutas internas.
-- Se agrega sección principal Dashboard, dejando preparado el acceso al futuro Dashboard Compresores y siguientes dashboards SDSO.
-- La etiqueta de versión del HTML queda genérica y es completada desde `js/config.js`.
+- Compresores y Centro Informe se retiran de la barra lateral por redundancia; permanecen como accesos rápidos en Inicio y dentro de Aplicaciones SDSO.
+- Se incorpora la sección principal Dashboard, preparada para la migración progresiva de dashboards SDSO.
+- Catálogo de Aplicaciones SDSO: App Compresores, Centro Informes de Turno, Mantención Clima ANT, Puentes Grúa y Polipastos ANT e Inspección de Polines.
 
+### PWA / offline
+- El Service Worker se registra sin depender de IndexedDB.
+- Fallback a caché ante respuestas HTTP 5xx cuando existe una copia válida.
+- Respuesta inmediata desde caché durante ventanas de red degradada para evitar timeouts acumulados.
+- Aislamiento seguro entre producción y staging mediante prefijos de caché no solapados.
+- Protección del almacenamiento local y apertura offline del app shell.
 
-Cuarta entrega de desarrollo de la etapa v0.2. Se mantiene fuera de `main` hasta completar auditoría y validación operacional.
+### IndexedDB y API
+- Se incorpora `js/db.js` con stores iniciales `datasets`, `meta` y `outbox`.
+- IndexedDB incorpora timeout, `onblocked`, `onversionchange`, reintento tras fallo y confirmación de escrituras al completar la transacción.
+- `api.js` normaliza errores mediante `ApiError`.
+- `health()` no marca sincronización real.
+- `auth.can('consultar')` queda habilitado para el rol provisional LECTOR; la autorización real seguirá validándose backend-side.
 
-### Correcciones de auditoría r2
-- **I-1:** el Service Worker se registra inmediatamente y ya no depende de que IndexedDB responda. La inicialización de IndexedDB ocurre en segundo plano con timeout de 3 s.
-- IndexedDB incorpora manejo de `onblocked`, `onversionchange`, reintento después de un fallo y confirmación de escrituras al completar la transacción.
-- **I-2:** al abrir el drawer móvil, el foco se mueve al primer enlace después de la transición; al cerrar vuelve al botón de menú.
-- **I-3:** la entrega de desarrollo usa identificadores aislados de producción:
-  - caché `stg-centro-control-sdso-*`;
-  - IndexedDB `centro-control-sdso-stg`;
-  - última sincronización `sdso-stg:lastSync`.
-  Antes del merge a `main` estos identificadores deben volver a los valores productivos.
-- **M-1:** N3 responde inmediatamente desde caché durante la ventana de red degradada sin bloquear la pantalla; la red vuelve a probarse al expirar la ventana de degradación.
-- **M-4:** `api.js` normaliza errores mediante `ApiError` con códigos (`TIMEOUT`, `NETWORK_ERROR`, `HTTP_ERROR`, etc.).
-- **M-5:** `auth.can('consultar')` devuelve `true` para el rol provisional LECTOR; la autorización real seguirá siendo backend-side.
-- **M-7:** se emiten advertencias de consola ante ids desconocidos o duplicados en `catalogs.apps`.
-- **M-8:** el cambio de sección usa `window.scrollTo(0, 0)` por compatibilidad.
+### Interfaz y accesibilidad
+- Topbar móvil más compacta y texto de sincronización legible.
+- Foco correcto del drawer móvil y retorno al botón de menú al cerrar.
+- Scroll al inicio al cambiar de sección.
+- Iconografía específica para Compresores.
+- Aplicaciones, Power BI e Informes/Herramientas se renderizan desde `js/config.js`.
 
-### PWA / offline ya incorporado en v0.2
-- **N2:** si la red responde HTTP 5xx y existe una copia válida en caché, el Service Worker entrega la copia cacheada.
-- **N3:** si ya se detectó red degradada, una nueva navegación usa `index.html` cacheado inmediatamente sin bloquear la pantalla; la red vuelve a probarse al expirar la ventana temporal.
-- `js/db.js` mantiene la base IndexedDB inicial con stores `datasets`, `meta` y `outbox` para evolución posterior.
+### Entorno productivo
+- `version: 0.2.0`
+- `environment: production`
+- `cachePrefix: centro-control-sdso-`
+- `dbName: centro-control-sdso`
+- `lastSyncKey: sdso:lastSync`
 
-### Interfaz y configuración modular
-- Topbar móvil compacta y texto de sincronización legible.
-- Scroll al inicio al cambiar de sección y gestión de foco del drawer.
-- Icono específico de Compresores.
-- Aplicaciones SDSO, Power BI e Informes/Herramientas se renderizan desde `js/config.js`.
-- Catálogo actual: App Compresores, Centro Informes de Turno, Mantención Clima ANT, Puentes Grúa y Polipastos ANT e Inspección de Polines.
-- Power BI y herramientas permanecen vacíos hasta contar con URLs validadas.
+### Validaciones realizadas
+- Cinco enlaces de Aplicaciones SDSO verificados por Mario.
+- App shell offline validado en staging y producción.
+- Staging verificado sin interferir con el caché offline de producción.
+- Polines y Centro Informe actualmente no tienen Service Worker, por lo que no interfieren con el caché del Centro de Control.
 
-### Pendiente de validación antes del merge
-- Mario debe confirmar los cinco enlaces del catálogo.
-- Claude debe revisar el `service-worker.js` de Polines por convivencia en `apps-mtto-ant.github.io`.
-- El indicador de conectividad sigue basado en `navigator.onLine`; estados `SINCRONIZANDO` y `CAMBIOS PENDIENTES` se completarán antes de cerrar v0.2.
-- Antes de mergear a `main`: cambiar `version` a `0.2.0`, `environment` a producción y restaurar los identificadores productivos de caché, IndexedDB y `lastSync`.
+### Pendientes de etapas posteriores
+- La conectividad visible sigue basada en `navigator.onLine`; los estados `SINCRONIZANDO` y `CAMBIOS PENDIENTES` se activarán cuando exista backend/sincronización y edición offline reales.
+- Antes de agregar páginas HTML separadas en `dashboards/` o `modules/`, revisar el fallback de navegación del Service Worker.
+- Al migrar Compresores, Clima o Puentes al origen `apps-mtto-ant.github.io`, revisar sus Service Workers antes de publicar.
 
 ## v0.1.2
 
