@@ -1,5 +1,5 @@
 const config = globalThis.SDSO_CONFIG;
-const DEFAULT_TIMEOUT_MS = 12000;
+const DEFAULT_TIMEOUT_MS = 30000;
 
 export class ApiError extends Error {
   constructor(code, message, details = null) {
