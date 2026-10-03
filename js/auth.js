@@ -150,7 +150,7 @@ export const auth = Object.freeze({
   get offline() { return offlineOnly; },
   get signedIn() { return Boolean(idToken); },
   get hasAccess() { return Boolean(idToken) || offlineOnly; },
-  can(action) { return action === 'consultar' ? this.hasAccess : action === 'editar' && role === 'EDITOR' && Boolean(idToken) && !offlineOnly; },
+  can(action) { return action === 'consultar' ? this.hasAccess : action === 'editar' && role === 'EDITOR' && Boolean(idToken) && !offlineOnly && navigator.onLine; },
   async refreshNovedades() {
     if (!idToken || offlineOnly) return null;
     return api.getNovedades(idToken);
