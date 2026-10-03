@@ -93,12 +93,14 @@ export const api = Object.freeze({
     return getJson('config');
   },
 
-  getEquipos() {
-    return getJson('getEquipos');
+  getEquipos(idToken) {
+    if (!idToken) return Promise.resolve({ ok: false, error: { code: 'AUTH_REQUIRED', message: 'Inicia sesión para continuar.' } });
+    return postJson({ action: 'getEquipos', idToken });
   },
 
-  getDashboardCompresores() {
-    return getJson('getDashboardCompresores');
+  getDashboardCompresores(idToken) {
+    if (!idToken) return Promise.resolve({ ok: false, error: { code: 'AUTH_REQUIRED', message: 'Inicia sesión para continuar.' } });
+    return postJson({ action: 'getDashboardCompresores', idToken });
   },
 
   authenticate(idToken) {
@@ -125,8 +127,8 @@ export const api = Object.freeze({
     return postJson({ action: 'closeNovedad', idToken, data });
   },
 
-  getDashboard(name = 'compresores') {
-    if (name === 'compresores') return getJson('getDashboardCompresores');
+  getDashboard(name = 'compresores', idToken) {
+    if (name === 'compresores') return this.getDashboardCompresores(idToken);
     throw new ApiError('DASHBOARD_NOT_SUPPORTED', `Dashboard no soportado: ${name}`);
   },
 

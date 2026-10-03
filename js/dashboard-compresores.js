@@ -181,7 +181,7 @@ async function refreshNovedades() {
   novedades=response.data.novedades;render();
 }
 async function fromNetwork(cacheReady) {
-  const response=await api.getDashboardCompresores();if(!response?.ok||!isValidSnapshot(response.data))throw new Error(response?.error?.message||'La respuesta del backend no cumple el esquema esperado.');
+  const response=await api.getDashboardCompresores(auth.token);if(!response?.ok||!isValidSnapshot(response.data))throw new Error(response?.error?.message||'La respuesta del backend no cumple el esquema esperado.');
   if(response.data.equipos.length===0){try{await cacheReady;}catch{}if(snapshot?.equipos?.length)throw new Error('El backend devolvió cero equipos; se conserva la última caché válida.');}
   snapshot=response.data;source='network';storedAt=new Date().toISOString();render();
   try{const saved=await putDataset(KEY,{data:response.data,serverTime:response.serverTime||null,apiVersion:response.apiVersion||null,storedAt});if(saved){markSuccessfulSync(response.serverTime?new Date(response.serverTime):new Date());window.dispatchEvent(new CustomEvent('sdso:sync'));}}
