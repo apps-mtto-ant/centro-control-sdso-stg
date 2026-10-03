@@ -232,9 +232,9 @@ async function capture(tabName=activeTab) {
   const panel=$(`[data-panel="${tabName}"]`);if(!panel)return;
   if(typeof globalThis.html2canvas!=='function')await loadCaptureLibrary();
   if(typeof globalThis.html2canvas!=='function'){window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'La captura PNG no está disponible; se abrirá la opción de imprimir o guardar como PDF.'}));window.print();return;}
-  const button=tabName==='turno'?$('#captureTurnReport'):$('#captureActiveTab');const original=button?.textContent;if(button){button.disabled=true;button.textContent='Preparando captura…';}
+  const button=$('#captureActiveTab');const original=button?.textContent;if(button){button.disabled=true;button.textContent='Preparando captura…';}
   try {
-    const canvas=await globalThis.html2canvas(panel,{backgroundColor:'#ffffff',scale:Math.min(2,globalThis.devicePixelRatio||2),useCORS:true,logging:false,windowWidth:Math.max(panel.scrollWidth,document.documentElement.clientWidth),onclone:doc=>{doc.querySelectorAll('.dashboard-tab-panel:not(.is-active)').forEach(x=>x.style.display='none');}});
+    const canvas=await globalThis.html2canvas(panel,{backgroundColor:'#ffffff',scale:Math.min(2,globalThis.devicePixelRatio||2),useCORS:true,logging:false,windowWidth:Math.max(panel.scrollWidth,document.documentElement.clientWidth),onclone:doc=>{doc.querySelectorAll('.dashboard-tab-panel:not(.is-active)').forEach(x=>x.style.display='none');doc.querySelectorAll('#captureTurnReport,#printTurnReport').forEach(x=>x.style.display='none');}});
     const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('No se pudo crear la imagen.')),'image/png'));
     const filename=`compresores-${tabName}-${new Date().toISOString().slice(0,10)}.png`;
     if(navigator.clipboard?.write&&globalThis.ClipboardItem){try{await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'Captura copiada al portapapeles.'}));return;}catch{}}
@@ -295,7 +295,7 @@ export function initDashboardCompresores() {
   $$('.dashboard-tab').forEach(button=>button.addEventListener('click',()=>setTab(button.dataset.tab)));
   ['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);el?.addEventListener(id==='dashboardSearch'?'input':'change',renderTable);});
   $('#dashboardClearFilters')?.addEventListener('click',()=>{['dashboardSearch','dashboardAreaFilter','dashboardModelFilter','dashboardSapFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderTable();});
-  $('#dashboardRefresh')?.addEventListener('click',()=>void load(true));$('#captureActiveTab')?.addEventListener('click',()=>void capture());$('#captureTurnReport')?.addEventListener('click',()=>void capture('turno'));$('#printTurnReport')?.addEventListener('click',()=>window.print());
+  $('#dashboardRefresh')?.addEventListener('click',()=>void load(true));$('#captureActiveTab')?.addEventListener('click',()=>void capture());$('#printTurnReport')?.addEventListener('click',()=>window.print());
   $('#refreshNovedades')?.addEventListener('click',()=>void refreshNovedades().catch(e=>window.dispatchEvent(new CustomEvent('sdso:toast',{detail:e.message}))));
   $('#noveltyList')?.addEventListener('click',event=>{const id=event.target.closest('[data-close-novelty]')?.dataset.closeNovelty;if(!id)return;if(!auth.can('editar'))return;void closeNovelty(id);});
   bindForm('statusForm',api.saveEstado,'Estado actualizado.');bindForm('horometerForm',api.saveHorometro,'Lectura de horómetro registrada.');bindForm('noveltyForm',api.saveNovedad,'Novedad registrada.');
