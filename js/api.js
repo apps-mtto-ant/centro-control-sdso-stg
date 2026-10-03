@@ -64,19 +64,37 @@ async function getJson(action, params = {}) {
   throw lastError || new ApiError('NETWORK_ERROR', 'No fue posible conectar con el backend.');
 }
 
+const IDEMPOTENT_WRITE_ACTIONS = new Set(['saveEstado', 'saveHorometro', 'saveNovedad', 'closeNovedad']);
+
 async function postJson(payload) {
   if (!config?.backendUrl) return { ok: false, configured: false };
-  const response = await fetchWithTimeout(config.backendUrl, {
-    method: 'POST',
-    // text/plain avoids a browser preflight; Apps Script still parses JSON from postData.
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload),
-    cache: 'no-store',
-    redirect: 'follow'
-  });
-  if (!response.ok) throw new ApiError('HTTP_ERROR', `Backend respondió HTTP ${response.status}.`, { status: response.status });
-  try { return await response.json(); }
-  catch (error) { throw new ApiError('INVALID_JSON', 'El backend devolvió una respuesta JSON no válida.', { cause: String(error?.message || error) }); }
+  const retryableWrite = IDEMPOTENT_WRITE_ACTIONS.has(payload?.action);
+  const maxAttempts = retryableWrite ? 2 : 1;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(config.backendUrl, {
+        method: 'POST',
+        // text/plain avoids a browser preflight; Apps Script still parses JSON from postData.
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        redirect: 'follow'
+      });
+      if (!response.ok) throw new ApiError('HTTP_ERROR', `Backend respondió HTTP ${response.status}.`, { status: response.status });
+      try { return await response.json(); }
+      catch (error) { throw new ApiError('INVALID_JSON', 'El backend devolvió una respuesta JSON no válida.', { cause: String(error?.message || error) }); }
+    } catch (error) {
+      lastError = error;
+      const uncertainTransport = ['TIMEOUT', 'NETWORK_ERROR', 'INVALID_JSON'].includes(error?.code)
+        || error?.code === 'HTTP_ERROR' && Number(error?.details?.status) >= 500;
+      if (!retryableWrite || !uncertainTransport || attempt === maxAttempts) throw error;
+      await sleep(500);
+    }
+  }
+
+  throw lastError || new ApiError('NETWORK_ERROR', 'No fue posible conectar con el backend.');
 }
 
 export const api = Object.freeze({

@@ -231,14 +231,45 @@ async function capture(tabName=activeTab) {
 async function submitForm(form, method, success) {
   const msg=form.querySelector('.form-message');if(!navigator.onLine){msg.textContent='Conéctate a internet para enviar este registro.';return;}
   if(!auth.can('editar')||!auth.token){msg.textContent='Inicia sesión con una cuenta de supervisión autorizada.';return;}
-  const button=form.querySelector('[type="submit"]');button.disabled=true;msg.textContent='Guardando…';
   const data=Object.fromEntries(new FormData(form).entries());
   if(data.fechaHora)data.fechaHora=new Date(data.fechaHora).toISOString();
   if(data.horometro)data.horometro=Number(data.horometro);
-  const fingerprint=JSON.stringify(data);if(form.dataset.requestFingerprint!==fingerprint){form.dataset.requestFingerprint=fingerprint;form.dataset.requestId=crypto.randomUUID();}data.requestId=form.dataset.requestId;
-  try{const result=await method(auth.token,data);if(!result?.ok){expireOnAuthError(result);throw new Error(result?.error?.message||'El registro fue rechazado.');}delete form.dataset.requestFingerprint;delete form.dataset.requestId;msg.textContent=success;form.reset();form.querySelectorAll('input[type="datetime-local"]').forEach(el=>el.value=localDateTime());await load(true);if(auth.signedIn)await refreshNovedades();}
-  catch(error){msg.textContent=error.message||'No fue posible guardar el registro.';}
-  finally{button.disabled=false;}
+  const fingerprint=JSON.stringify(data);
+  if(form.dataset.uncertainFingerprint&&form.dataset.uncertainFingerprint!==fingerprint){msg.textContent='El envío anterior no se pudo confirmar. No cambies los datos ni crees otro registro; mantén este formulario y vuelve a intentar con los mismos datos para evitar duplicados.';return;}
+  if(form.dataset.requestFingerprint!==fingerprint){form.dataset.requestFingerprint=fingerprint;form.dataset.requestId=crypto.randomUUID();}
+  data.requestId=form.dataset.requestId;
+  const button=form.querySelector('[type="submit"]');button.disabled=true;msg.textContent='Guardando…';
+  let result;
+  try {
+    result=await method(auth.token,data);
+  } catch(error) {
+    if(['TIMEOUT','NETWORK_ERROR','INVALID_JSON'].includes(error?.code)||error?.code==='HTTP_ERROR'&&Number(error?.details?.status)>=500){
+      form.dataset.uncertainFingerprint=fingerprint;
+      msg.textContent='No se pudo confirmar la respuesta del backend. El registro pudo haberse guardado. No cambies los datos; vuelve a intentar con este mismo formulario para verificarlo sin duplicar.';
+    } else {
+      msg.textContent=error.message||'No fue posible guardar el registro.';
+    }
+    button.disabled=false;
+    return;
+  }
+  if(result?.ok!==true){
+    const code=String(result?.error?.code||'');
+    if(result?.ok===false&&code&&code!=='INTERNAL_ERROR'){
+      expireOnAuthError(result);
+      msg.textContent=result?.error?.message||'El registro fue rechazado.';
+      delete form.dataset.requestFingerprint;delete form.dataset.requestId;delete form.dataset.uncertainFingerprint;
+    }else{
+      form.dataset.uncertainFingerprint=fingerprint;
+      msg.textContent='La respuesta no confirma si el registro se guardó. No cambies los datos; reintenta con este mismo formulario para verificarlo sin duplicar.';
+    }
+    button.disabled=false;
+    return;
+  }
+  delete form.dataset.requestFingerprint;delete form.dataset.requestId;delete form.dataset.uncertainFingerprint;
+  msg.textContent=success;form.reset();form.querySelectorAll('input[type="datetime-local"]').forEach(el=>el.value=localDateTime());
+  try{await load(true);}catch(error){console.warn('El registro se guardó, pero no se pudo actualizar el panel.',error);}
+  if(auth.signedIn){try{await refreshNovedades();}catch(error){console.warn('El registro se guardó, pero no se pudo actualizar novedades.',error);}}
+  button.disabled=false;
 }
 function bindForm(id,method,message) {const form=$(`#${id}`);form?.addEventListener('submit',event=>{event.preventDefault();if(form.reportValidity())void submitForm(form,method,message);});}
 export function initDashboardCompresores() {
