@@ -1,4 +1,4 @@
-/* v0.4.0-stg-auth12f */
+/* v0.4.0-stg-auth12g */
 importScripts('./js/config.js');
 
 const CONFIG = self.SDSO_CONFIG;
