@@ -265,6 +265,7 @@ code { background: #EDF3F4; padding: 2px 5px; border-radius: 5px; color: #365058
 .editor-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:12px}
 .editor-form label{display:grid;gap:6px;color:var(--muted);font-size:11px;font-weight:800}
 .editor-form input,.editor-form select,.editor-form textarea{width:100%;min-height:42px;border:1px solid var(--border);border-radius:9px;background:white;color:var(--text);padding:9px 10px;font:inherit;font-size:13px}
+.editor-form input[readonly]{background:#EEF4F5;color:#40565A;cursor:default}
 .editor-form textarea{resize:vertical}.editor-form .form-wide{grid-column:1/-1}.editor-form .form-message{grid-column:1/-1;margin:0;min-height:1.2em;color:#17695F;font-size:12px}.editor-form [type=submit]{justify-self:start}
 .novelty-list{display:grid;gap:10px}.novelty-card{border:1px solid var(--border);border-left:4px solid #D59B24;border-radius:10px;padding:13px;background:#fff}
 .novelty-description{margin:10px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
