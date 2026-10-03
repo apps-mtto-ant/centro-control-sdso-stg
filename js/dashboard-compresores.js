@@ -36,10 +36,16 @@ const clean = v => v == null || v === '' ? '—' : String(v);
 const nrm = v => (v == null ? '' : String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const modelKey = v => (v == null ? '' : String(v)).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 const safeArray = x => Array.isArray(x) ? x : [];
+function availabilityForState(state) {
+  const operational=nrm(state);
+  if(['operativo','stand by'].includes(operational))return 'DISPONIBLE';
+  if(['fuera de servicio','overhaul','mantencion','falla'].includes(operational))return 'NO DISPONIBLE';
+  return '';
+}
 function normalizeFrontendState(state) {
   if(!state)return null;
-  const operational=nrm(state.estado),availability=nrm(state.disponibilidad);
-  return (operational==='operativo'&&availability==='disponible')||(operational==='fuera de servicio'&&availability==='indisponible')?state:null;
+  const disponibilidad=availabilityForState(state.estado);
+  return disponibilidad?{...state,disponibilidad}:null;
 }
 function normalizeFrontendSnapshot(data) {
   if(!data||!Array.isArray(data.equipos))return data;
@@ -92,28 +98,28 @@ function areaStats(items) {
   const out={};
   items.forEach(item=>{
     const area=item.maestro?.areaOperacional || 'SIN ÁREA';
-    const s=out[area] ||= {total:0,disponibles:0,indisponibles:0,sinEstado:0,novedades:0,equipos:[]};
+    const s=out[area] ||= {total:0,disponibles:0,noDisponibles:0,sinEstado:0,novedades:0,equipos:[]};
     s.total++; s.equipos.push(item); s.novedades += Number(item.novedadesAbiertas)||0;
     const d=nrm(item.estadoActual?.disponibilidad);
-    if(d==='disponible')s.disponibles++; else if(d==='indisponible')s.indisponibles++; else s.sinEstado++;
+    if(d==='disponible')s.disponibles++; else if(d==='no disponible')s.noDisponibles++; else s.sinEstado++;
   });
   return out;
 }
 function statusCounts(items) {
-  const count={disponibles:0,indisponibles:0,sinEstado:0};
-  items.forEach(x=>{const s=nrm(x.estadoActual?.disponibilidad);if(s==='disponible')count.disponibles++;else if(s==='indisponible')count.indisponibles++;else count.sinEstado++;});
+  const count={disponibles:0,noDisponibles:0,sinEstado:0};
+  items.forEach(x=>{const s=nrm(x.estadoActual?.disponibilidad);if(s==='disponible')count.disponibles++;else if(s==='no disponible')count.noDisponibles++;else count.sinEstado++;});
   return count;
 }
 function renderKpis() {
   const items=equipment(), kpiItems=items.filter(x=>nrm(x.maestro?.aplicaKpi)==='si');
   const basis=kpiItems.length?kpiItems:items, s=statusCounts(basis);
-  [['#kpiTotal',basis.length],['#kpiDisponibles',s.disponibles],['#kpiIndisponibles',s.indisponibles],['#kpiSinEstado',s.sinEstado],['#kpiNovedades',snapshot?.resumen?.novedadesAbiertas ?? items.reduce((a,x)=>a+(Number(x.novedadesAbiertas)||0),0)]]
+  [['#kpiTotal',basis.length],['#kpiDisponibles',s.disponibles],['#kpiIndisponibles',s.noDisponibles],['#kpiSinEstado',s.sinEstado],['#kpiNovedades',snapshot?.resumen?.novedadesAbiertas ?? items.reduce((a,x)=>a+(Number(x.novedadesAbiertas)||0),0)]]
     .forEach(([sel,val])=>{const el=$(sel);if(el)el.textContent=String(val??0);});
   const update=$('#dashboardLastUpdate'); if(update)update.textContent=snapshot?.resumen?.ultimaActualizacion?`Última actualización operacional: ${stamp(snapshot.resumen.ultimaActualizacion)}`:'Sin actualización operacional registrada';
-  const fleet=[{name:'Disponibles',v:s.disponibles},{name:'Indisponibles',v:s.indisponibles},{name:'Sin estado',v:s.sinEstado}];
+  const fleet=[{name:'Disponibles',v:s.disponibles},{name:'No disponibles',v:s.noDisponibles},{name:'Sin estado',v:s.sinEstado}];
   barList($('#fleetChart'),fleet,'v','name');
   const byArea=areaStats(items);
-  barList($('#availabilityMiniChart'),Object.entries(byArea).map(([name,a])=>({name,v:a.disponibles+a.indisponibles?100*a.disponibles/(a.disponibles+a.indisponibles):null,emptyLabel:'Sin datos'})).sort((a,b)=>a.name.localeCompare(b.name,'es')),'v','name',true);
+  barList($('#availabilityMiniChart'),Object.entries(byArea).map(([name,a])=>({name,v:a.disponibles+a.noDisponibles?100*a.disponibles/(a.disponibles+a.noDisponibles):null,emptyLabel:'Sin datos'})).sort((a,b)=>a.name.localeCompare(b.name,'es')),'v','name',true);
   const novTypes={}; safeArray(novedades).filter(n=>nrm(n.estado)!=='cerrada').forEach(n=>{const key=n.tipo||'SIN TIPO';novTypes[key]=(novTypes[key]||0)+1;});
   barList($('#noveltyMiniChart'),Object.entries(novTypes).map(([name,v])=>({name,v})),'v');
 }
@@ -121,7 +127,7 @@ function createAreaCard(name, area, compact=false) {
   const card=document.createElement('article'); card.className='area-card';
   const head=document.createElement('div'); head.className='area-card-head'; head.append(text('h4',name),text('span',`${area.total} equipos`,'area-total')); card.append(head);
   const metrics=document.createElement('div'); metrics.className='area-metrics';
-  [['Disponibles',area.disponibles,'ok'],['Indisponibles',area.indisponibles,'bad'],['Sin estado',area.sinEstado,'pending']].forEach(([label,value,cls])=>{const m=document.createElement('div');m.className=`area-metric ${cls}`;m.append(text('strong',value),text('span',label));metrics.append(m);});
+  [['Disponibles',area.disponibles,'ok'],['No disponibles',area.noDisponibles,'bad'],['Sin estado',area.sinEstado,'pending']].forEach(([label,value,cls])=>{const m=document.createElement('div');m.className=`area-metric ${cls}`;m.append(text('strong',value),text('span',label));metrics.append(m);});
   card.append(metrics);
   if (!compact) {
     const list=document.createElement('div');list.className='area-equipment-list';
@@ -133,26 +139,26 @@ function createAreaCard(name, area, compact=false) {
 function renderAreas() {
   const stats=areaStats(equipment());
   [['#areaSummary',true],['#areaBoard',false]].forEach(([sel,compact])=>{const root=$(sel);if(!root)return;root.replaceChildren();const keys=Object.keys(stats).sort((a,b)=>a.localeCompare(b,'es'));if(!keys.length)root.append(text('p','Sin equipos disponibles.','empty-inline'));keys.forEach(k=>root.append(createAreaCard(k,stats[k],compact)));});
-  const root=$('#availabilityChart');if(root){const data=Object.entries(stats).map(([name,a])=>({name,v:a.disponibles+a.indisponibles?100*a.disponibles/(a.disponibles+a.indisponibles):null,emptyLabel:'Sin datos'}));barList(root,data,'v','name',true);}
-  const stateChart=$('#areaStatusChart');if(stateChart){stateChart.replaceChildren();const rows=Object.entries(stats).sort((a,b)=>a[0].localeCompare(b[0],'es'));if(!rows.length)stateChart.append(text('p','Sin datos suficientes para mostrar este gráfico.','empty-inline'));rows.forEach(([name,a])=>{const line=document.createElement('div');line.className='area-status-row';line.append(text('span',name,'chart-bar-label'));[['Disponibles',a.disponibles,'ok'],['Indisponibles',a.indisponibles,'bad'],['Sin estado',a.sinEstado,'pending']].forEach(([label,value,kind])=>{const metric=document.createElement('span');metric.className=`area-status-count ${kind}`;metric.title=label;metric.textContent=`${label}: ${value}`;line.append(metric);});stateChart.append(line);});}
+  const root=$('#availabilityChart');if(root){const data=Object.entries(stats).map(([name,a])=>({name,v:a.disponibles+a.noDisponibles?100*a.disponibles/(a.disponibles+a.noDisponibles):null,emptyLabel:'Sin datos'}));barList(root,data,'v','name',true);}
+  const stateChart=$('#areaStatusChart');if(stateChart){stateChart.replaceChildren();const rows=Object.entries(stats).sort((a,b)=>a[0].localeCompare(b[0],'es'));if(!rows.length)stateChart.append(text('p','Sin datos suficientes para mostrar este gráfico.','empty-inline'));rows.forEach(([name,a])=>{const line=document.createElement('div');line.className='area-status-row';line.append(text('span',name,'chart-bar-label'));[['Disponibles',a.disponibles,'ok'],['No disponibles',a.noDisponibles,'bad'],['Sin estado',a.sinEstado,'pending']].forEach(([label,value,kind])=>{const metric=document.createElement('span');metric.className=`area-status-count ${kind}`;metric.title=label;metric.textContent=`${label}: ${value}`;line.append(metric);});stateChart.append(line);});}
   const total=equipment().filter(x=>nrm(x.maestro?.aplicaKpi)==='si').length || equipment().length;
   const state=statusCounts(equipment().filter(x=>nrm(x.maestro?.aplicaKpi)==='si').length?equipment().filter(x=>nrm(x.maestro?.aplicaKpi)==='si'):equipment());
-  const known=state.disponibles+state.indisponibles; $('#availabilityRate').textContent=known?`${Math.round(state.disponibles/known*100)}%`:'—';
+  const known=state.disponibles+state.noDisponibles; $('#availabilityRate').textContent=known?`${Math.round(state.disponibles/known*100)}%`:'—';
   $('#availabilityBase').textContent=String(known);$('#availabilityMissing').textContent=String(state.sinEstado); void total;
 }
 function renderCritical() {
   const rows=equipment().filter(x=>nrm(x.maestro?.esCritico)==='si');
-  const s=statusCounts(rows);$('#criticalTotal').textContent=String(rows.length);$('#criticalAvailable').textContent=String(s.disponibles);$('#criticalUnavailable').textContent=String(s.indisponibles);$('#criticalUnknown').textContent=String(s.sinEstado);
+  const s=statusCounts(rows);$('#criticalTotal').textContent=String(rows.length);$('#criticalAvailable').textContent=String(s.disponibles);$('#criticalUnavailable').textContent=String(s.noDisponibles);$('#criticalUnknown').textContent=String(s.sinEstado);
   const note=$('#criticalSourceNote');note.textContent=rows.length?'La criticidad proviene del campo esCritico en MAESTRO_EQUIPOS.':"No hay equipos marcados como críticos en el maestro. No se infiere criticidad desde estado, modelo ni aplicaKpi.";
   const openIds=new Set(safeArray(novedades).filter(n=>nrm(n.estado)!=='cerrada').map(n=>n.equipoId));barList($('#criticalStatusChart'),[{name:'Con novedad abierta',v:rows.filter(x=>openIds.has(x.equipoId)).length},{name:'Sin novedad abierta',v:rows.filter(x=>!openIds.has(x.equipoId)).length}],'v');
-  const root=$('#criticalList');root.replaceChildren();rows.forEach(x=>{const area=x.maestro?.areaOperacional||'SIN ÁREA';const d=nrm(x.estadoActual?.disponibilidad);const card=createAreaCard(`${x.equipoId} · ${x.maestro?.denominacion||x.maestro?.modelo||'Equipo'}`,{total:1,disponibles:d==='disponible'?1:0,indisponibles:d==='indisponible'?1:0,sinEstado:!['disponible','indisponible'].includes(d)?1:0,equipos:[x]});card.classList.add('critical-card');card.prepend(text('span',area,'area-total'));root.append(card);});
+  const root=$('#criticalList');root.replaceChildren();rows.forEach(x=>{const area=x.maestro?.areaOperacional||'SIN ÁREA';const d=nrm(x.estadoActual?.disponibilidad);const card=createAreaCard(`${x.equipoId} · ${x.maestro?.denominacion||x.maestro?.modelo||'Equipo'}`,{total:1,disponibles:d==='disponible'?1:0,noDisponibles:d==='no disponible'?1:0,sinEstado:!['disponible','no disponible'].includes(d)?1:0,equipos:[x]});card.classList.add('critical-card');card.prepend(text('span',area,'area-total'));root.append(card);});
 }
 function renderFilters() {
   const items=equipment();
   const sets=[['#dashboardAreaFilter',items.map(x=>x.maestro?.areaOperacional),'Todas las áreas'],['#dashboardModelFilter',items.map(x=>x.maestro?.modelo),'Todos los modelos'],['#dashboardSapFilter',items.map(x=>x.maestro?.estadoValidacionSAP),'Toda validación SAP']];
   sets.forEach(([sel,values,placeholder])=>{const el=$(sel);if(!el)return;const current=el.value;el.replaceChildren(new Option(placeholder,''));[...new Set(values.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es')).forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===current))el.value=current;});
   $$('.equipment-select').forEach(el=>{const current=el.value;el.replaceChildren(new Option('Selecciona un equipo',''));items.slice().sort((a,b)=>String(a.maestro?.denominacion||a.equipoId).localeCompare(String(b.maestro?.denominacion||b.equipoId),'es')).forEach(x=>el.add(new Option(`${x.maestro?.denominacion||'Equipo'} · ${x.maestro?.modelo||'Sin modelo'} · ${x.equipoId}`,x.equipoId)));if([...el.options].some(o=>o.value===current))el.value=current;});
-  document.querySelectorAll('[data-list]').forEach(el=>{let list=snapshot?.listas?.[el.dataset.list]||[];if(el.dataset.list==='estadoOperacional')list=list.filter(v=>['operativo','fuera de servicio'].includes(nrm(v)));if(el.dataset.list==='disponibilidad')list=list.filter(v=>['disponible','indisponible'].includes(nrm(v)));const current=el.value;el.replaceChildren(new Option('Selecciona una opción',''));list.forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===current))el.value=current;});
+  document.querySelectorAll('[data-list]').forEach(el=>{let list=snapshot?.listas?.[el.dataset.list]||[];if(el.dataset.list==='estadoOperacional')list=list.filter(v=>['operativo','stand by','fuera de servicio','overhaul','mantencion','falla'].includes(nrm(v)));const current=el.value;el.replaceChildren(new Option('Selecciona una opción',''));list.forEach(v=>el.add(new Option(v,v)));if([...el.options].some(o=>o.value===current))el.value=current;});
 }
 function matches(item) {
   const q=nrm($('#dashboardSearch')?.value||''),area=$('#dashboardAreaFilter')?.value||'',model=$('#dashboardModelFilter')?.value||'',sap=$('#dashboardSapFilter')?.value||'';
@@ -178,10 +184,10 @@ function renderSap() {
   distribution($('#sapReconciliationRows'),{'Activos en maestro':snapshot?.conciliacionSAP?.activos??equipment().length,'Claves SAP duplicadas':snapshot?.conciliacionSAP?.duplicadosSAP?.length??0,'Equipos sin clave SAP':snapshot?.conciliacionSAP?.sinSAP??0,'Modelos SAP distintos tras normalizar':snapshot?.conciliacionSAP?.modeloNoEquivalente?.length??0},v=>String(v));
 }
 function renderShift() {
-  const items=equipment(), s=statusCounts(items);$('#turnTotal').textContent=String(items.length);$('#turnAvailable').textContent=String(s.disponibles);$('#turnUnavailable').textContent=String(s.indisponibles);$('#turnUnknown').textContent=String(s.sinEstado);
+  const items=equipment(), s=statusCounts(items);$('#turnTotal').textContent=String(items.length);$('#turnAvailable').textContent=String(s.disponibles);$('#turnUnavailable').textContent=String(s.noDisponibles);$('#turnUnknown').textContent=String(s.sinEstado);
   $('#turnReportDate').textContent=`Informe generado ${new Intl.DateTimeFormat('es-CL',{dateStyle:'full',timeStyle:'short'}).format(new Date())}`;
-  const chart=$('#turnAreaChart');if(chart){chart.replaceChildren();const areas=Object.entries(areaStats(items)).sort((a,b)=>a[0].localeCompare(b[0],'es'));if(!areas.length)chart.append(text('p','Sin datos por área.','empty-inline'));areas.forEach(([name,a])=>{const row=document.createElement('div');row.className='shift-chart-row';row.append(text('strong',name,'shift-chart-label'));const track=document.createElement('div');track.className='shift-chart-track';[['available',a.disponibles],['unavailable',a.indisponibles],['unknown',a.sinEstado]].forEach(([kind,count])=>{if(!count)return;const segment=document.createElement('span');segment.className=`shift-chart-segment ${kind}`;segment.style.width=`${100*count/Math.max(1,a.total)}%`;segment.title=`${count} ${kind==='available'?'disponibles':kind==='unavailable'?'indisponibles':'sin estado'}`;track.append(segment);});row.append(track,text('span',`${a.disponibles} disp. · ${a.indisponibles} indisp. · ${a.sinEstado} sin estado`,'shift-chart-value'));chart.append(row);});}
-  const body=$('#turnAreaBody');body.replaceChildren();Object.entries(areaStats(items)).sort((a,b)=>a[0].localeCompare(b[0],'es')).forEach(([name,a])=>{const tr=document.createElement('tr');[name,a.total,a.disponibles,a.indisponibles,a.sinEstado,a.novedades].forEach(v=>cell(tr,v));body.append(tr);});
+  const chart=$('#turnAreaChart');if(chart){chart.replaceChildren();const areas=Object.entries(areaStats(items)).sort((a,b)=>a[0].localeCompare(b[0],'es'));if(!areas.length)chart.append(text('p','Sin datos por área.','empty-inline'));areas.forEach(([name,a])=>{const row=document.createElement('div');row.className='shift-chart-row';row.append(text('strong',name,'shift-chart-label'));const track=document.createElement('div');track.className='shift-chart-track';[['available',a.disponibles],['unavailable',a.noDisponibles],['unknown',a.sinEstado]].forEach(([kind,count])=>{if(!count)return;const segment=document.createElement('span');segment.className=`shift-chart-segment ${kind}`;segment.style.width=`${100*count/Math.max(1,a.total)}%`;segment.title=`${count} ${kind==='available'?'disponibles':kind==='unavailable'?'no disponibles':'sin estado'}`;track.append(segment);});row.append(track,text('span',`${a.disponibles} disp. · ${a.noDisponibles} no disp. · ${a.sinEstado} sin estado`,'shift-chart-value'));chart.append(row);});}
+  const body=$('#turnAreaBody');body.replaceChildren();Object.entries(areaStats(items)).sort((a,b)=>a[0].localeCompare(b[0],'es')).forEach(([name,a])=>{const tr=document.createElement('tr');[name,a.total,a.disponibles,a.noDisponibles,a.sinEstado,a.novedades].forEach(v=>cell(tr,v));body.append(tr);});
   const root=$('#turnNoveltySummary');root.replaceChildren();if(!auth.signedIn){root.append(text('p','Inicia sesión con una cuenta autorizada para consultar el detalle de las novedades.','empty-inline'));return;}safeArray(novedades).filter(n=>nrm(n.estado)!=='cerrada').forEach(n=>root.append(noveltyCard(n,false)));if(!root.children.length)root.append(text('p','No hay novedades abiertas registradas.','empty-inline'));
 }
 function noveltyCard(n, allowClose=true) {
@@ -313,7 +319,7 @@ export function initDashboardCompresores() {
   $('#dashboardRefresh')?.addEventListener('click',()=>void load(true));$('#captureActiveTab')?.addEventListener('click',()=>void capture());$('#printTurnReport')?.addEventListener('click',()=>window.print());
   $('#refreshNovedades')?.addEventListener('click',()=>void refreshNovedades().catch(e=>window.dispatchEvent(new CustomEvent('sdso:toast',{detail:e.message}))));
   $('#noveltyList')?.addEventListener('click',event=>{const id=event.target.closest('[data-close-novelty]')?.dataset.closeNovelty;if(!id)return;if(!auth.can('editar'))return;void closeNovelty(id);});
-  $('#statusForm')?.addEventListener('change',event=>{const form=event.currentTarget,state=form.elements.estado,availability=form.elements.disponibilidad;if(event.target===state){const pair=nrm(state.value)==='operativo'?'disponible':nrm(state.value)==='fuera de servicio'?'indisponible':'';if(pair)availability.value=[...availability.options].find(o=>nrm(o.value)===pair)?.value||'';}else if(event.target===availability){const pair=nrm(availability.value)==='disponible'?'operativo':nrm(availability.value)==='indisponible'?'fuera de servicio':'';if(pair)state.value=[...state.options].find(o=>nrm(o.value)===pair)?.value||'';}});
+  $('#statusForm')?.addEventListener('change',event=>{const form=event.currentTarget,state=form.elements.estado,availability=form.elements.disponibilidad;if(event.target===state&&availability)availability.value=availabilityForState(state.value);});
   bindForm('statusForm',api.saveEstado,'Estado actualizado.');bindForm('horometerForm',api.saveHorometro,'Lectura de horómetro registrada.');bindForm('noveltyForm',api.saveNovedad,'Novedad registrada.');
   auth.init(state=>{syncEditorUi();if(state?.authorized)void loadCaptureLibrary();if(!state?.authorized){snapshot=null;novedades=null;source='none';storedAt=null;activeUserKey='';['equipmentTableBody','horometerTableBody','turnAreaBody','criticalList','areaSummary','areaBoard','areaStatusChart','availabilityChart','fleetChart','availabilityMiniChart','noveltyMiniChart','criticalStatusChart','sapReconciliationRows','turnAreaChart','noveltyList','turnNoveltySummary'].forEach(id=>document.getElementById(id)?.replaceChildren());['kpiTotal','kpiDisponibles','kpiIndisponibles','kpiSinEstado','kpiNovedades','availabilityRate','availabilityBase','availabilityMissing','criticalTotal','criticalAvailable','criticalUnavailable','criticalUnknown','sapConfirmed','sapPending','sapError','sapInactive','turnTotal','turnAvailable','turnUnavailable','turnUnknown','dashboardLastUpdate','turnReportDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});['statusForm','horometerForm','noveltyForm'].forEach(id=>{const form=document.getElementById(id);form?.reset();if(form){delete form.dataset.requestFingerprint;delete form.dataset.requestId;delete form.dataset.uncertainFingerprint;const button=form.querySelector('[type="submit"]');if(button)button.disabled=false;}const message=form?.querySelector('.form-message');if(message)message.textContent='';});pendingNoveltyClosures.clear();setSource();return;}if(activeUserKey&&auth.userKey&&activeUserKey!==auth.userKey){snapshot=null;novedades=null;source='none';storedAt=null;}if(snapshot)render();if(auth.signedIn&&!auth.offline)void refreshNovedades().catch(e=>console.warn(e));else{novedades=null;renderNovedades();}});
 }
