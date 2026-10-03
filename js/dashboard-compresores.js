@@ -284,10 +284,41 @@ export function initDashboardCompresores() {
   bindForm('statusForm',api.saveEstado,'Estado actualizado.');bindForm('horometerForm',api.saveHorometro,'Lectura de horómetro registrada.');bindForm('noveltyForm',api.saveNovedad,'Novedad registrada.');
   auth.init(state=>{if(!state?.authorized){snapshot=null;novedades=null;source='none';storedAt=null;activeUserKey='';['equipmentTableBody','horometerTableBody','turnAreaBody','criticalList','areaSummary','areaBoard','areaStatusChart','availabilityChart','fleetChart','availabilityMiniChart','noveltyMiniChart','criticalStatusChart','sapReconciliationRows','turnAreaChart','noveltyList','turnNoveltySummary'].forEach(id=>document.getElementById(id)?.replaceChildren());['kpiTotal','kpiDisponibles','kpiIndisponibles','kpiSinEstado','kpiNovedades','availabilityRate','availabilityBase','availabilityMissing','criticalTotal','criticalAvailable','criticalUnavailable','criticalUnknown','sapConfirmed','sapPending','sapError','sapInactive','turnTotal','turnAvailable','turnUnavailable','turnUnknown','dashboardLastUpdate','turnReportDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});['statusForm','horometerForm','noveltyForm'].forEach(id=>{const form=document.getElementById(id);form?.reset();const message=form?.querySelector('.form-message');if(message)message.textContent='';});setSource();return;}if(activeUserKey&&auth.userKey&&activeUserKey!==auth.userKey){snapshot=null;novedades=null;source='none';storedAt=null;}if(snapshot)render();if(auth.signedIn&&!auth.offline)void refreshNovedades().catch(e=>console.warn(e));else{novedades=null;renderNovedades();}});
 }
+const pendingNoveltyClosures = new Map();
+
 async function closeNovelty(novedadId) {
   if(!navigator.onLine){window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'Conéctate a internet para cerrar la novedad.'}));return;}
-  const observacionCierre=prompt('Observación de cierre (opcional):');if(observacionCierre===null)return;
-  try{const result=await api.closeNovedad(auth.token,{novedadId,observacionCierre,requestId:crypto.randomUUID()});if(!result?.ok){expireOnAuthError(result);throw new Error(result?.error?.message||'No fue posible cerrar la novedad.');}await refreshNovedades();await load(true);}
-  catch(error){window.dispatchEvent(new CustomEvent('sdso:toast',{detail:error.message}));}
+  let request=pendingNoveltyClosures.get(novedadId);
+  if(!request){
+    const observacionCierre=prompt('Observación de cierre (opcional):');if(observacionCierre===null)return;
+    request={novedadId,observacionCierre,requestId:crypto.randomUUID()};
+    pendingNoveltyClosures.set(novedadId,request);
+  }
+  let result;
+  try {
+    result=await api.closeNovedad(auth.token,request);
+  } catch(error) {
+    const uncertain=['TIMEOUT','NETWORK_ERROR','INVALID_JSON'].includes(error?.code)||error?.code==='HTTP_ERROR'&&Number(error?.details?.status)>=500;
+    const message=uncertain
+      ?'No se pudo confirmar la respuesta. La novedad pudo haberse cerrado; vuelve a pulsar el mismo botón para verificar el cierre sin duplicar la solicitud.'
+      :error.message||'No fue posible cerrar la novedad.';
+    window.dispatchEvent(new CustomEvent('sdso:toast',{detail:message}));
+    return;
+  }
+  if(!result?.ok){
+    pendingNoveltyClosures.delete(novedadId);
+    expireOnAuthError(result);
+    window.dispatchEvent(new CustomEvent('sdso:toast',{detail:result?.error?.message||'El backend rechazó el cierre de la novedad.'}));
+    return;
+  }
+  pendingNoveltyClosures.delete(novedadId);
+  window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'Novedad cerrada correctamente.'}));
+  try {
+    await refreshNovedades();
+    await load(true);
+  } catch(error) {
+    console.warn('La novedad se cerró, pero no se pudo actualizar la vista.',error);
+    window.dispatchEvent(new CustomEvent('sdso:toast',{detail:'La novedad se cerró correctamente, pero no se pudo actualizar la lista. Actualiza novedades para ver el cambio.'}));
+  }
 }
 export function loadDashboardCompresores(force=false){return auth.hasAccess?load(force):Promise.resolve(false);}
