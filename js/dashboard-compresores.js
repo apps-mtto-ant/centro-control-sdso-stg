@@ -204,7 +204,7 @@ function renderNovedades() {
 function syncEditorUi() {
   const isEditor=auth.can('editar');
   document.querySelectorAll('[data-editor-only]').forEach(el=>{el.hidden=!isEditor;});
-  const signOut=$('#signOutButton');if(signOut)signOut.hidden=!auth.hasAccess;
+  const signOut=$('#signOutButton');if(signOut)signOut.hidden=!auth.hasAccess||auth.offline;
 }
 function render() {
   syncEditorUi();
