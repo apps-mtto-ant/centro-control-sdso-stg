@@ -44,6 +44,10 @@ function markerIsFresh(marker, lastSync) {
   const age = Date.now() - syncedAt;
   return Boolean(marker?.userKey && Number.isFinite(age) && age >= 0 && age <= OFFLINE_TTL_MS);
 }
+function localStamp(value) {
+  const date=new Date(value||'');
+  return Number.isNaN(date.getTime())?'no disponible':new Intl.DateTimeFormat('es-CL',{dateStyle:'short',timeStyle:'short'}).format(date);
+}
 
 async function restoreOfflineAccess() {
   if (navigator.onLine) return false;
@@ -53,10 +57,11 @@ async function restoreOfflineAccess() {
     if (!markerIsFresh(marker, cached)) return false;
     offlineOnly = true;
     idToken = null;
-    role = 'LECTOR';
-    email = '';
+    role = marker.role === 'EDITOR' ? 'EDITOR' : 'LECTOR';
+    email = String(marker.email || '');
     userKey = marker.userKey;
-    setStatus(`Modo sin conexión · solo lectura · última sincronización ${cached || 'no disponible'}.`);
+    const identityLabel=email ? ` · ${email}` : '';
+    setStatus(`Modo sin conexión · solo lectura${identityLabel} · última sincronización ${localStamp(cached)}.`);
     publish();
     return true;
   } catch (error) {
@@ -96,7 +101,7 @@ async function acceptCredential(response) {
     email = result.data.email || '';
     userKey = nextUserKey;
     offlineOnly = false;
-    if (userKey) await setMeta(OFFLINE_MARKER_KEY, { userKey, authenticatedAt: Date.now() });
+    if (userKey) await setMeta(OFFLINE_MARKER_KEY, { userKey, email, role, authenticatedAt: Date.now() });
     setStatus(role === 'EDITOR' ? `Sesión de supervisión · ${email}` : `Sesión de consulta · ${email}`);
     publish();
     window.dispatchEvent(new CustomEvent('sdso:toast', { detail: role === 'EDITOR' ? 'Acceso de edición habilitado.' : 'Acceso de consulta habilitado.' }));
@@ -174,6 +179,18 @@ export const auth = Object.freeze({
       startGoogleIdentity(hosts, config);
       publish();
     })();
+  },
+  revalidateOnline() {
+    if (!navigator.onLine) { setStatus('Sin conexión. Continúas en modo solo lectura.'); return false; }
+    if (!offlineOnly) return Boolean(idToken);
+    offlineOnly = false;
+    idToken = null;
+    const hosts = ['googleSignIn', 'googleSignInGate'].map(id => document.getElementById(id)).filter(Boolean);
+    const config = globalThis.SDSO_CONFIG;
+    setStatus('Conexión restablecida. Verifica nuevamente tu cuenta para volver al modo online.');
+    publish();
+    if (hosts.length && config?.googleClientId) startGoogleIdentity(hosts, config);
+    return false;
   },
   signOut(message = 'Sesión cerrada.') {
     const oldUserKey = userKey;
